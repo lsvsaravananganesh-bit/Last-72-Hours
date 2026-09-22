@@ -354,15 +354,17 @@ window.Last72SelectZone=selectZone;
   const keys=Object.create(null);
   const mouse={x:0,y:0,down:false};
   let camera={x:0,y:0},paused=false,mapOpen=false,toastText="",toastUntil=0;
-  let selectedVehicle="SUV",vehicleActive=false,interactCooldown=0,last=performance.now();
+  let selectedVehicle="SUV",vehicleActive=false,selectedVehicleIndex=0,interactCooldown=0,last=performance.now();
+  let bridgeDown=false,floodLevel=0,fireHotspots=0;
+  const trafficVehicles=Array.from({length:16},(_,i)=>({x:80+i*135,y:i%2?548:928,dir:i%2?1:-1,speed:55+(i%4)*18,type:["CAR","VAN","BUS","TRUCK"][i%4],color:["#d7e2e4","#6fc7ff","#ffc857","#ff7b8a"][i%4]}));
   let missionIndex=0,score=0;
   const player={x:430,y:940,r:15,angle:-.4,speed:210,health:100,stamina:100};
   const vehicles=[
-    {name:"RESCUE SUV",type:"SUV",x:480,y:885,w:54,h:30,color:"#8fffe2",speed:310,capacity:6},
-    {name:"EVAC BUS",type:"BUS",x:650,y:1010,w:82,h:34,color:"#ffc857",speed:205,capacity:36},
-    {name:"AMBULANCE",type:"AMB",x:1120,y:620,w:58,h:30,color:"#ff7b8a",speed:275,capacity:4},
-    {name:"RESCUE BOAT",type:"BOAT",x:1720,y:1040,w:58,h:30,color:"#61c8ff",speed:245,capacity:12},
-    {name:"HELICOPTER",type:"HELI",x:1650,y:270,w:64,h:30,color:"#b99cff",speed:390,capacity:8}
+    {name:"RESCUE SUV",type:"SUV",x:480,y:885,w:54,h:30,color:"#8fffe2",speed:310,capacity:6,fuel:100,health:100},
+    {name:"EVAC BUS",type:"BUS",x:650,y:1010,w:82,h:34,color:"#ffc857",speed:205,capacity:36,fuel:100,health:100},
+    {name:"AMBULANCE",type:"AMB",x:1120,y:620,w:58,h:30,color:"#ff7b8a",speed:275,capacity:4,fuel:100,health:100},
+    {name:"RESCUE BOAT",type:"BOAT",x:1720,y:1040,w:58,h:30,color:"#61c8ff",speed:245,capacity:12,fuel:100,health:100},
+    {name:"HELICOPTER",type:"HELI",x:1650,y:270,w:64,h:30,color:"#b99cff",speed:390,capacity:8,fuel:100,health:100}
   ];
   const missions=[
     {title:"FIRST WARNING",zone:"coastal",x:300,y:300,action:"warning",text:"Reach Coastal Ward and broadcast the first warning.",reward:100},
@@ -394,7 +396,7 @@ window.Last72SelectZone=selectZone;
   const npcs=[];
   const npcKinds=["CIVILIAN","FAMILY","DOCTOR","PARAMEDIC","VOLUNTEER","SHOPKEEPER","FIRE CREW"];
   for(let i=0;i<42;i++){
-    npcs.push({x:120+Math.random()*1880,y:90+Math.random()*1110,kind:npcKinds[i%npcKinds.length],vx:0,vy:0,state:"CALM",panic:0});
+    npcs.push({x:120+Math.random()*1880,y:90+Math.random()*1110,kind:npcKinds[i%npcKinds.length],vx:0,vy:0,state:"CALM",panic:0,rescued:false});
   }
   const particles=[];
   function resize(){canvas.width=map.clientWidth||innerWidth;canvas.height=map.clientHeight||innerHeight}
@@ -419,8 +421,18 @@ window.Last72SelectZone=selectZone;
     const v=vehicleActive?vehicles.find(v=>v.type===selectedVehicle)?.speed||260:player.speed;
     dx/=len;dy/=len;player.angle=Math.atan2(dy,dx);
     const nx=clamp(player.x+dx*v*dt,25,W-25),ny=clamp(player.y+dy*v*dt,25,H-25);
-    if(!collideBuilding(nx,player.y,vehicleActive?18:player.r))player.x=nx;
-    if(!collideBuilding(player.x,ny,vehicleActive?18:player.r))player.y=ny;
+    const radius=vehicleActive?20:player.r;
+    const blockedBridge=bridgeDown && nx>1180 && nx<1420 && player.y>495 && player.y<600;
+    if(!collideBuilding(nx,player.y,radius) && !blockedBridge)player.x=nx;
+    if(!collideBuilding(player.x,ny,radius))player.y=ny;
+    if(vehicleActive){const v=vehicles[selectedVehicleIndex];v.x=player.x;v.y=player.y;v.fuel=Math.max(0,v.fuel-dt*(v.type==="HELI"?1.8:.65));if(v.fuel<=0){vehicleActive=false;say("VEHICLE OUT OF FUEL • RETURN TO DEPOT")}}
+  }
+  function updateTraffic(dt){
+    for(const t of trafficVehicles){
+      t.x += t.dir*t.speed*dt;
+      if(t.dir>0 && t.x>W+80)t.x=-80;
+      if(t.dir<0 && t.x<-80)t.x=W+80;
+    }
   }
   function updateNPC(dt){
     for(const n of npcs){
@@ -428,6 +440,11 @@ window.Last72SelectZone=selectZone;
       if(d<250 && (state.panic>45||state.misinformation>45)){n.state="PANIC";n.panic=clamp(n.panic+dt*4,0,100);const a=Math.atan2(n.y-player.y,n.x-player.x);n.vx=Math.cos(a)*35;n.vy=Math.sin(a)*35}
       else {n.state="CALM";if(Math.random()<.015){n.vx=(Math.random()-.5)*28;n.vy=(Math.random()-.5)*28}}
       n.x=clamp(n.x+n.vx*dt,25,W-25);n.y=clamp(n.y+n.vy*dt,25,H-25);
+      if(!n.rescued && dist(n,player)<32 && vehicleActive){
+        n.rescued=true;n.state="RESCUED";n.vx=0;n.vy=0;score+=20;
+        say("CIVILIAN RESCUED • +20 RESPONSE XP");
+        try{state.evacuated=(state.evacuated||0)+1;state.safety=Math.min(100,state.safety+1)}catch(e){}
+      }
     }
   }
   function completeMission(){
@@ -446,7 +463,7 @@ window.Last72SelectZone=selectZone;
     const m=mission();
     if(m&&dist(player,m)<100){completeMission();return}
     const nearV=vehicles.find(v=>dist(player,v)<75);
-    if(nearV){selectedVehicle=nearV.type;vehicleActive=true;player.x=nearV.x;player.y=nearV.y;say("VEHICLE ENTERED • "+nearV.name);return}
+    if(nearV){selectedVehicleIndex=vehicles.indexOf(nearV);selectedVehicle=nearV.type;vehicleActive=true;player.x=nearV.x;player.y=nearV.y;say("VEHICLE ENTERED • "+nearV.name);return}
     const z=zoneAt(player.x,player.y);
     if(z){window.Last72SelectZone(z.key);say("ZONE SELECTED • "+z.name+" • "+z.risk+" RISK");return}
     say("NO INTERACTION IN RANGE");
@@ -459,6 +476,7 @@ window.Last72SelectZone=selectZone;
   function drawRoads(){
     ctx.fillStyle="#172d35";
     roads.forEach(r=>{ctx.fillRect(r.x-camera.x,r.y-camera.y,r.w,r.h)});
+    if(bridgeDown){ctx.fillStyle="#44252b";ctx.fillRect(1180-camera.x,495-camera.y,240,105);ctx.fillStyle="#ff6978";ctx.font="bold 11px Arial";ctx.fillText("BRIDGE CLOSED",1200-camera.x,545-camera.y)}
     ctx.strokeStyle="#36535a";ctx.lineWidth=2;ctx.setLineDash([16,18]);
     roads.forEach(r=>{ctx.beginPath();if(r.w>r.h){ctx.moveTo(r.x-camera.x,r.y+r.h/2-camera.y);ctx.lineTo(r.x+r.w-camera.x,r.y+r.h/2-camera.y)}else{ctx.moveTo(r.x+r.w/2-camera.x,r.y-camera.y);ctx.lineTo(r.x+r.w/2-camera.x,r.y+r.h-camera.y)}ctx.stroke()});ctx.setLineDash([]);
   }
@@ -469,10 +487,11 @@ window.Last72SelectZone=selectZone;
     zones.forEach(z=>{const x=z.x-camera.x,y=z.y-camera.y;ctx.fillStyle=z.risk==="CRITICAL"?"rgba(255,74,91,.10)":z.risk==="HIGH"?"rgba(255,170,70,.08)":"rgba(85,225,190,.055)";ctx.fillRect(x,y,z.w,z.h);ctx.strokeStyle=z.key===state.selectedZone?"#9fffe5":"rgba(120,160,170,.25)";ctx.lineWidth=z.key===state.selectedZone?3:1;ctx.strokeRect(x,y,z.w,z.h);ctx.fillStyle="#cfe1e5";ctx.font="bold 14px Arial";ctx.fillText(z.name,x+12,y+24);ctx.fillStyle=z.risk==="CRITICAL"?"#ff6978":z.risk==="HIGH"?"#ffc857":"#72e6c4";ctx.font="10px Arial";ctx.fillText(z.risk+" RISK",x+12,y+42)});
   }
   function drawNPCs(){
-    npcs.forEach(n=>{const p=worldToScreen(n.x,n.y);ctx.fillStyle=n.state==="PANIC"?"#ff6978":n.kind==="DOCTOR"||n.kind==="PARAMEDIC"?"#ff9ca8":n.kind==="VOLUNTEER"||n.kind==="FIRE CREW"?"#72e6c4":"#f5d477";ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill();});
+    npcs.forEach(n=>{if(n.rescued)return;const p=worldToScreen(n.x,n.y);ctx.fillStyle=n.state==="PANIC"?"#ff6978":n.kind==="DOCTOR"||n.kind==="PARAMEDIC"?"#ff9ca8":n.kind==="VOLUNTEER"||n.kind==="FIRE CREW"?"#72e6c4":"#f5d477";ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill();});
   }
+  function drawTraffic(){trafficVehicles.forEach(t=>{const p=worldToScreen(t.x,t.y);ctx.fillStyle=t.color;ctx.fillRect(p.x-16,p.y-7,32,14);ctx.fillStyle="#0a1519";ctx.fillRect(p.x-7,p.y-4,14,5)})}
   function drawVehicles(){
-    vehicles.forEach(v=>{const p=worldToScreen(v.x,v.y);ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle=v.color;ctx.fillRect(-v.w/2,-v.h/2,v.w,v.h);ctx.fillStyle="#071016";ctx.fillRect(-v.w*.28,-v.h*.25,v.w*.56,v.h*.32);ctx.restore();ctx.fillStyle="#dbecee";ctx.font="9px Arial";ctx.fillText(v.type,p.x-v.w/2,p.y+v.h/2+12)});
+    vehicles.forEach((v,idx)=>{const p=worldToScreen(v.x,v.y);ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle=v.color;ctx.fillRect(-v.w/2,-v.h/2,v.w,v.h);ctx.fillStyle="#071016";ctx.fillRect(-v.w*.28,-v.h*.25,v.w*.56,v.h*.32);ctx.restore();ctx.fillStyle="#dbecee";ctx.font="9px Arial";ctx.fillText(v.type,p.x-v.w/2,p.y+v.h/2+12);if(idx===selectedVehicleIndex && vehicleActive){ctx.strokeStyle="#9fffe5";ctx.strokeRect(p.x-v.w/2-5,p.y-v.h/2-5,v.w+10,v.h+10)}});
   }
   function drawMission(){
     const m=mission();if(!m)return;const p=worldToScreen(m.x,m.y),pulse=8+Math.sin(performance.now()/180)*4;ctx.strokeStyle="#9fffe5";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,pulse+12,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#9fffe5";ctx.beginPath();ctx.moveTo(p.x,p.y-10);ctx.lineTo(p.x-7,p.y+5);ctx.lineTo(p.x+7,p.y+5);ctx.closePath();ctx.fill();ctx.fillStyle="#eafff9";ctx.font="bold 11px Arial";ctx.fillText(m.title,p.x+18,p.y+4);ctx.font="9px Arial";ctx.fillStyle="#8ca6ad";ctx.fillText("E  INTERACT",p.x+18,p.y+17)}
@@ -492,10 +511,10 @@ window.Last72SelectZone=selectZone;
   }
   function frame(now){
     const dt=Math.min(.033,(now-last)/1000);last=now;interactCooldown=Math.max(0,interactCooldown-dt);
-    if(!paused&&!mapOpen){movePlayer(dt);updateNPC(dt)}
+    if(!paused&&!mapOpen){movePlayer(dt);updateNPC(dt);updateTraffic(dt);floodLevel=Math.min(100,floodLevel+dt*(state.rainfall>220?.7:.18));if(floodLevel>62)bridgeDown=true;}
     camera.x=clamp(player.x-canvas.width/2,0,Math.max(0,W-canvas.width));camera.y=clamp(player.y-canvas.height/2,0,Math.max(0,H-canvas.height));
     ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#07131a";ctx.fillRect(0,0,canvas.width,canvas.height);
-    drawRoads();drawBuildings();drawZones();drawVehicles();drawNPCs();drawMission();drawStorm();drawPlayer();drawParticles();drawUI();
+    drawRoads();drawBuildings();drawZones();drawTraffic();drawVehicles();drawNPCs();drawMission();drawStorm();drawPlayer();drawParticles();drawUI();
     requestAnimationFrame(frame);
   }
   addEventListener("keydown",e=>{
@@ -505,7 +524,7 @@ window.Last72SelectZone=selectZone;
     if(k==="m"){mapOpen=!mapOpen;paused=false;e.preventDefault();return}
     if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){keys[k]=true;e.preventDefault()}
     if(k==="e"&&!mapOpen){interact();e.preventDefault()}
-    if(k==="v"&&!mapOpen){vehicleActive=!vehicleActive;say(vehicleActive?"VEHICLE MODE • "+selectedVehicle:"ON FOOT");e.preventDefault()}
+    if(k==="v"&&!mapOpen){if(vehicleActive){vehicleActive=false;say("EXIT VEHICLE • ON FOOT")}else{const v=vehicles.findIndex(v=>Math.hypot(v.x-player.x,v.y-player.y)<90);if(v>=0){selectedVehicleIndex=v;selectedVehicle=vehicles[v].type;vehicleActive=true;say("ENTERED • "+vehicles[v].name)}else say("NO EMERGENCY VEHICLE NEARBY")}e.preventDefault()}
     if("12345".includes(k)&&!mapOpen){useAction(Number(k)-1);e.preventDefault()}
   });
   addEventListener("keyup",e=>{keys[e.key.toLowerCase()]=false});
