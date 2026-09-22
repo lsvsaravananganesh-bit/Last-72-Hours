@@ -34,7 +34,44 @@
     services.innerHTML=c.services.map((s,i)=>'<button class="fi-service" data-service="'+i+'"><b>'+s[0]+'</b><span>'+s[1]+'</span><em>'+(s[2]?'USE':'INSPECT')+'</em></button>').join('');
     services.querySelectorAll(".fi-service").forEach((b,i)=>b.addEventListener("click",()=>act(c.services[i])));
   }
+  const dialogues={
+    eoc:[
+      ["COMMANDER","Storm track just shifted east. We have less time than expected."],
+      ["PLANNER","Two evacuation corridors remain open. Pick one before traffic builds."],
+      ["DISPATCH","Field teams are waiting for your next assignment."]
+    ],
+    hospital:[
+      ["DOCTOR","The emergency ward can absorb another surge, but not indefinitely."],
+      ["PARAMEDIC","Ambulances are reporting longer travel times near Riverside."],
+      ["NURSE","Shelter transfers are increasing. Medical supplies need attention."]
+    ],
+    police:[
+      ["OFFICER","False evacuation messages are spreading through Market."],
+      ["DISPATCH","We can escort the next convoy if you authorize it."],
+      ["TRAFFIC UNIT","One blocked corridor is already creating congestion."]
+    ],
+    fire:[
+      ["FIRE CAPTAIN","A new fire has been reported near the industrial district."],
+      ["RESCUE CREW","We can reach the scene, but access may close after landfall pressure rises."],
+      ["DISPATCH","Distress calls are increasing. Prioritize the critical ones."]
+    ],
+    shelter:[
+      ["COORDINATOR","Families are arriving faster than registration can process them."],
+      ["VOLUNTEER","We need food, water and medical kits at the reception point."],
+      ["FAMILY","We heard two different evacuation instructions. Which one is correct?"]
+    ]
+  };
+  let dialogueIndex=0;
+  function showDialogue(type){
+    const lines=dialogues[type]; if(!lines||!lines.length)return;
+    const d=lines[dialogueIndex%lines.length]; dialogueIndex++;
+    const old=document.getElementById("fiDialogue"); if(old)old.remove();
+    const el=document.createElement("div"); el.id="fiDialogue";
+    el.innerHTML='<div class="fid-box"><span>'+d[0]+'</span><p>'+d[1]+'</p><button>ACKNOWLEDGE</button></div>';
+    shell.appendChild(el); el.querySelector("button").onclick=()=>el.remove();
+  }
   function act(s){
+    if(active && ["hospital","police","fire","eoc","shelter"].includes(active.type)) showDialogue(active.type);
     if(s[2]&&window.Last72FacilityService) window.Last72FacilityService(s[2]);
     const msg=s[2]?'SERVICE COMPLETE • '+s[0]:'INSPECTION COMPLETE • '+s[0];
     result.textContent=msg;result.classList.add("flash");
