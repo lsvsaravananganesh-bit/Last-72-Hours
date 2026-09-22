@@ -47,6 +47,7 @@ The repository intentionally keeps the playable runtime dependency-free.
 | Field-system presentation | gameplay-systems.css | Live incident and response-system HUD |
 | Living-city presentation | dynamic-world.css | Dynamic AI HUD and world overlay |
 | Competition documentation | PROMPT_PLAY_STRUCTURE.md | Competition requirements and submission alignment |
+| Final competition polish | final-polish.js / final-polish.css | Mission rail, judge-demo pacing, feedback audio, visual hierarchy and throttled UI coordination |
 
 ### Runtime boundary
 
@@ -93,3 +94,13 @@ It does **not** reproduce another game's characters, map, story, assets or brand
 8. Resolve cascading incidents.
 9. Continue through changing missions until landfall.
 10. Show the final outcome and explain how player decisions changed the city.
+
+### First 2–3 minutes — judge-ready sequence
+
+- **0:00–0:20** — Enter command center, start tutorial and read the single active objective.
+- **0:20–1:00** — Reach **Coastal Ward** and complete **FIRST WARNING**.
+- **1:00–1:40** — Follow the mission rail to **Harbour**, enter the rescue SUV and complete **EVACUATION RUN**.
+- **1:40–2:20** — The city begins generating field pressure: traffic, distress calls or a fire can appear without overwhelming the opening.
+- **2:20–3:00** — Show the first consequence-driven response, then open the tactical map or switch vehicle to demonstrate depth.
+
+The opening is intentionally paced so a judge sees the core loop before the simulation reaches its full difficulty.
