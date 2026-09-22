@@ -118,3 +118,4 @@ body.final-opening .systems-right{opacity:.72}
 .clean-stats{align-items:center}
 .clean-stats #gameHelpButton{flex:0 0 28px}
 .clean-controls{pointer-events:none}
+\n/* FULL SCROLLABLE TACTICAL MAP */\n#gameMapCanvas{width:100%!important;height:100%!important;touch-action:none;cursor:grab;user-select:none}\n#gameMapCanvas:active{cursor:grabbing}\n.game-map-panel{overflow:hidden!important}\n.gmp-head{flex:0 0 54px}\n.gmp-body{height:calc(100% - 92px)!important;min-height:0!important}\n.gmp-legend{flex:0 0 28px}\n.gmp-map-hint{margin-left:auto;color:#718b93;font:7px Arial;letter-spacing:.8px}\n@media(max-width:760px){.gmp-map-hint{display:none}}\n
