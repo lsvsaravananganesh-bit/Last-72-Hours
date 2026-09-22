@@ -13,7 +13,7 @@ const initialZones = JSON.parse(JSON.stringify(zoneData));
 const state = {
   hours:72,budget:100,safety:82,distance:720,confidence:61,wind:55,turn:1,ended:false,
   peopleProtected:0,evacuated:0,shelterCapacity:0,vehicles:18,teams:12,food:100,medical:100,communications:100,
-  forecastShift:0,landfallZone:"coastal",history:[],routesOpen:true,hospitalReady:52,trust:62,panic:18,congestion:20,power:86,misinformation:12,shelterStress:0,chainReactions:0
+  forecastShift:0,landfallZone:"coastal",history:[],routesOpen:true,hospitalReady:52,trust:62,panic:18,congestion:20,power:86,misinformation:12,shelterStress:0,chainReactions:0,landfallProb:58,rainfall:110,stormRadius:180,trackShift:0,modelA:54,modelB:31,modelC:15,scenario:"Baseline Cyclone",scenarioLevel:1
 };
 
 const $=id=>document.getElementById(id);
@@ -27,24 +27,68 @@ function totalPopulation(){return Object.values(zoneData).reduce((n,z)=>n+z.popu
 function highRiskPopulation(){return Object.values(zoneData).filter(z=>z.risk==="CRITICAL"||z.risk==="HIGH").reduce((n,z)=>n+z.population,0)}
 function phase(){return state.hours>48?"PREPARATION PHASE":state.hours>24?"ESCALATION PHASE":state.hours>0?"CRISIS PHASE":"LANDFALL"}
 
+function updateCycloneIntelligence(){
+  const progress=Math.min(1,(720-state.distance)/720);
+  const volatility=(100-state.confidence)/8;
+  state.wind=Math.min(190,Math.round(55+progress*105+volatility));
+  state.rainfall=Math.round(110+progress*230+volatility*6+(state.landfallZone==="riverside"?35:0));
+  state.stormRadius=Math.round(180+progress*150+(state.wind>130?35:0));
+  const pressure=Math.round(1008-progress*38-volatility);
+  const shiftPool=["coastal","harbour","riverside","villages"];
+  if(state.turn>1 && Math.random()<0.38){
+    const next=shiftPool[Math.floor(Math.random()*shiftPool.length)];
+    if(next!==state.landfallZone){state.landfallZone=next;state.forecastShift=next;state.trackShift+=Math.round((Math.random()-.5)*90);}
+  }
+  const base={coastal:48,harbour:24,riverside:16,villages:12}[state.landfallZone]||48;
+  state.landfallProb=Math.max(35,Math.min(92,Math.round(base+(state.confidence-50)*.35+(progress*8))));
+  const jitter=state.confidence<50?8:4;
+  state.modelA=Math.max(5,Math.round(state.landfallProb+(Math.random()-.5)*jitter));
+  state.modelB=Math.max(5,Math.round((100-state.modelA)*.55+(Math.random()-.5)*jitter));
+  state.modelC=Math.max(5,100-state.modelA-state.modelB);
+  if(state.modelC<5){state.modelC=5;state.modelB=Math.max(5,95-state.modelA);}
+  const scenarios=[
+    ["Baseline Cyclone",1],
+    ["Rapid Intensification",2],
+    ["Track Deviation",2],
+    ["Rainfall-Heavy System",2],
+    ["Infrastructure Stress Test",3]
+  ];
+  const selected=scenarios[Math.min(scenarios.length-1,Math.floor((progress*4)+(state.chainReactions>2?1:0)))];
+  state.scenario=selected[0];state.scenarioLevel=selected[1];
+  state.forecastPressure=pressure;
+}
+
+function renderForecast(){
+  $("landfallProb").textContent=state.landfallProb+"%";
+  $("rainfall").textContent=state.rainfall+" mm";
+  $("stormRadius").textContent=state.stormRadius+" km";
+  $("trackShift").textContent=(state.trackShift>=0?"+":"")+state.trackShift+" km";
+  $("models").textContent="MODEL A • "+state.modelA+"% &nbsp; MODEL B • "+state.modelB+"% &nbsp; MODEL C • "+state.modelC+"% • "+state.scenario+" • Pressure "+state.forecastPressure+" hPa";
+}
+
 function updateRisk(){
   Object.entries(zoneData).forEach(([key,z])=>{
     const base={coastal:95,harbour:90,oldtown:72,riverside:78,industrial:68,north:38,market:48,villages:75}[key];
     const distanceFactor=Math.max(0,(720-state.distance)/7);
-    z.riskScore=Math.min(100,Math.round(base+distanceFactor+(state.forecastShift===key?12:0)));
+    const corridorBoost=state.forecastShift===key?18:0;
+    const rainBoost=(key==="riverside"||key==="villages")?Math.max(0,(state.rainfall-150)/10):0;
+    const windBoost=state.wind>135?7:0;
+    z.riskScore=Math.min(100,Math.round(base+distanceFactor+corridorBoost+rainBoost+windBoost));
     z.risk=z.riskScore>=88?"CRITICAL":z.riskScore>=62?"HIGH":z.riskScore>=42?"MODERATE":"LOW";
   });
 }
 
 function render(){
+  updateCycloneIntelligence();
   updateRisk();
+  renderForecast();
   $("clock").textContent=String(Math.max(0,state.hours)).padStart(2,"0")+":00";
   $("turn").textContent="TURN "+Math.min(state.turn,12)+" / 12";
   $("budget").textContent="₹"+state.budget;
   $("safety").textContent=Math.max(0,Math.round(state.safety))+"%";
   $("distance").textContent=Math.max(0,state.distance)+" km";
   $("confidence").textContent=Math.round(state.confidence)+"%";
-  $("wind").textContent="WIND "+Math.round(state.wind)+" km/h";
+  $("wind").textContent="WIND "+Math.round(state.wind)+" km/h • RAIN "+state.rainfall+" mm";
   $("phase").textContent=phase();
 
   const progress=Math.min(1,(720-state.distance)/720);
@@ -172,6 +216,20 @@ function takeAction(action){
   state.confidence=Math.min(96,state.confidence+Math.floor(Math.random()*5));
   if(state.hours<=24)state.safety-=3;else state.safety-=1.5;
   if(state.turn%2===0)runEvent();
+  if(state.scenarioLevel>=2 && state.turn%3===0){
+    state.confidence=Math.max(34,state.confidence-3);
+    state.safety-=2;
+    addFeed("CYCLONE INTELLIGENCE • "+state.scenario+" is increasing uncertainty.");
+  }
+  if(state.wind>145){
+    state.routesOpen=false;
+    state.congestion=Math.min(100,state.congestion+8);
+    addFeed("WEATHER ESCALATION • Extreme winds are forcing temporary route restrictions.");
+  }
+  if(state.rainfall>260){
+    zoneData.riverside.readiness=Math.max(0,zoneData.riverside.readiness-8);
+    state.shelterStress=Math.min(100,state.shelterStress+6);
+  }
   if(state.communications<40)state.safety-=2;
   if(state.medical<35)state.safety-=2;
   if(state.power<35){state.safety-=3;state.chainReactions++;addFeed("CASCADING EFFECT • Power instability is affecting essential services.");}
@@ -204,7 +262,7 @@ document.querySelectorAll(".zone").forEach(z=>z.addEventListener("click",()=>sel
 document.querySelectorAll(".facility").forEach(f=>f.addEventListener("click",()=>inspectFacility(f.dataset.facility)));
 $("restart").addEventListener("click",()=>{
   Object.keys(initialZones).forEach(k=>Object.assign(zoneData[k],JSON.parse(JSON.stringify(initialZones[k]))));
-  Object.assign(state,{hours:72,budget:100,safety:82,distance:720,confidence:61,wind:55,turn:1,ended:false,peopleProtected:0,evacuated:0,shelterCapacity:0,vehicles:18,teams:12,food:100,medical:100,communications:100,forecastShift:0,landfallZone:"coastal",history:[],routesOpen:true,hospitalReady:52,trust:62,panic:18,congestion:20,power:86,misinformation:12,shelterStress:0,chainReactions:0});
+  Object.assign(state,{hours:72,budget:100,safety:82,distance:720,confidence:61,wind:55,turn:1,ended:false,peopleProtected:0,evacuated:0,shelterCapacity:0,vehicles:18,teams:12,food:100,medical:100,communications:100,forecastShift:0,landfallZone:"coastal",history:[],routesOpen:true,hospitalReady:52,trust:62,panic:18,congestion:20,power:86,misinformation:12,shelterStress:0,chainReactions:0,landfallProb:58,rainfall:110,stormRadius:180,trackShift:0,modelA:54,modelB:31,modelC:15,scenario:"Baseline Cyclone",scenarioLevel:1});
   $("report").hidden=true;feed.innerHTML="";
   addFeed("SYSTEM • New emergency simulation initialized.");
   addFeed("FORECAST • Multiple models show different landfall corridors.");
@@ -214,4 +272,5 @@ $("restart").addEventListener("click",()=>{
 addFeed("SYSTEM • Cyclone warning received. 72 hours until projected landfall.");
 addFeed("FORECAST • Three models show different landfall corridors.");
 addFeed("COMMAND • You control budget, preparedness and response.");
+addFeed("CYCLONE INTELLIGENCE • Track models will update after each command.");
 render();
