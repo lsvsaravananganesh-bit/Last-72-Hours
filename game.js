@@ -94,7 +94,7 @@ function applyMode(mode){
 }
 document.querySelectorAll(".mode-option").forEach(b=>b.addEventListener("click",()=>applyMode(b.dataset.mode)));
 
-function startMission(){ applyMode(selectedMode); $("briefingOverlay").classList.add("hidden"); playTone("success"); addFeed("MISSION • "+GAME_MODES[selectedMode].name+" mode activated."); render(); }playTone("success");const overlay=$("briefingOverlay");if(overlay)overlay.classList.add("hidden");addFeed("BRIEFING • Mission started. You have 72 hours to prepare Surya Nagar.");}
+function startMission(){ applyMode(selectedMode); $("briefingOverlay").classList.add("hidden"); playTone("success"); addFeed("MISSION • "+GAME_MODES[selectedMode].name+" mode activated."); render(); }
 function runQuickDemo(){ if(state.ended)return;if(state.ended)return;const sequence=["warning","shelter","evacuate","hospital","roads"];let i=0;const tick=()=>{if(i<sequence.length&&!state.ended){takeAction(sequence[i],"DEMO");i++;setTimeout(tick,550)}};tick();addFeed("JUDGE DEMO • Running the recommended 5-command sequence.");} 
 function openJudgeDemo(){const overlay=$("briefingOverlay");if(overlay)overlay.classList.remove("hidden");const card=overlay?.querySelector(".briefing-card");if(card)card.querySelector(".eyebrow").textContent="PROMPT & PLAY • JUDGE DEMO";}
 function render(){
