@@ -19,3 +19,5 @@
 .mode-option.active{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 0 1px #54c8ff22 inset;background:#0d2938}
 .mode-description{font-size:9px;color:var(--muted);line-height:1.45;margin:8px 0 0}
 @media(max-width:700px){.theme-chip{display:none}.mode-options{grid-template-columns:1fr}.mode-picker{margin-top:10px}}
+
+.mode-picker{box-shadow:0 16px 45px #0006;backdrop-filter:blur(10px)}.scenario-picker{margin-top:9px}.scenario-picker select{width:100%;background:#071827;color:var(--text);border:1px solid #2c617c;border-radius:9px;padding:9px;font-size:9px;font-weight:800;outline:none}.scenario-picker select:focus{border-color:var(--cyan);box-shadow:0 0 0 2px #54c8ff18}
