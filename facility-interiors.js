@@ -5,7 +5,7 @@
     '<div class="fi-backdrop"></div><div class="fi-shell"><header class="fi-head"><div><span class="fi-kicker">SURYA NAGAR // FACILITY INTERIOR</span><h2 id="fiTitle">FACILITY</h2><p id="fiSubtitle">Operational service area</p></div><div class="fi-head-right"><span id="fiStatus">ONLINE</span><button id="fiExit">EXIT TO CITY <b>ESC</b></button></div></header><main class="fi-main"><div class="fi-room" id="fiRoom"><div class="fi-grid"></div><div class="fi-door"></div><div class="fi-room-label" id="fiRoomLabel">SERVICE FLOOR</div><div class="fi-npcs" id="fiNpcs"></div><div class="fi-console" id="fiConsole"></div></div><aside class="fi-services"><div class="fi-mini">AVAILABLE SERVICES</div><div id="fiServices"></div><div class="fi-result" id="fiResult">Walk to a service point or select an operation.</div></aside></main><footer class="fi-footer"><span><b>WASD</b> MOVE IS DISABLED INSIDE • <b>E</b> USE SERVICE</span><span id="fiHint">FACILITY OPERATIONS</span></footer></div>';
   document.body.appendChild(shell);
   const title=document.getElementById("fiTitle"),subtitle=document.getElementById("fiSubtitle"),status=document.getElementById("fiStatus"),services=document.getElementById("fiServices"),result=document.getElementById("fiResult"),room=document.getElementById("fiRoom"),npcs=document.getElementById("fiNpcs"),consoleEl=document.getElementById("fiConsole");
-  let active=null,open=false;
+  let active=null,open=false,interactionMode="service";
   const configs={
     eoc:{title:"EMERGENCY OPERATIONS CENTER",subtitle:"Command floor • mission control • intelligence",label:"COMMAND FLOOR",services:[["OPERATIONS DESK","Review active mission and command priorities",null],["PLANNING DESK","Reassess cyclone intelligence",null],["PUBLIC INFORMATION","Open warning network", "comms"]],npcs:["COMMANDER","PLANNER","DISPATCH"]},
     hospital:{title:"CITY HOSPITAL",subtitle:"Emergency department • medical continuity",label:"EMERGENCY DEPARTMENT",services:[["EMERGENCY INTAKE","Increase hospital readiness","hospital"],["MEDICAL TRIAGE","Stabilize incoming demand","hospital"],["AMBULANCE BAY","Prepare emergency response","hospital"]],npcs:["DOCTOR","PARAMEDIC","NURSE"]},
@@ -22,6 +22,11 @@
     heli:{title:"EMERGENCY HELIPAD",subtitle:"Air rescue • rapid deployment",label:"HELIPAD CONTROL",services:[["READY HELICOPTER","Prepare rapid-response aircraft","heli"],["AIR RECON","Review city emergency picture",null]],npcs:["PILOT","AIR CREW"]},
     market:{title:"RELIEF SUPPLY MARKET",subtitle:"Food • medical supplies • relief logistics",label:"RELIEF WAREHOUSE",services:[["LOAD FOOD","Increase emergency food stock","market"],["LOAD MEDICAL KITS","Increase medical supplies","market"],["SUPPLY DISPATCH","Prepare relief shipment", "market"]],npcs:["WAREHOUSE LEAD","VOLUNTEER","SUPPLY DRIVER"]}
   };
+  function cinematic(titleText,lines){
+    const old=document.getElementById("fiCinematic"); if(old)old.remove();
+    const el=document.createElement("div");el.id="fiCinematic";el.innerHTML="<div class=\"fic-box\"><span>FIELD REPORT // LIVE</span><h2>"+titleText+"</h2><p>"+lines.join("<br>")+"</p><button>CONTINUE</button></div>";shell.appendChild(el);
+    el.querySelector("button").onclick=()=>el.remove();
+  }
   function render(c){
     title.textContent=c.title;subtitle.textContent=c.subtitle;document.getElementById("fiRoomLabel").textContent=c.label;
     npcs.innerHTML=c.npcs.map((n,i)=>'<span class="fi-npc n'+i+'"><i></i>'+n+'</span>').join('');
@@ -32,7 +37,8 @@
   function act(s){
     if(s[2]&&window.Last72FacilityService) window.Last72FacilityService(s[2]);
     const msg=s[2]?'SERVICE COMPLETE • '+s[0]:'INSPECTION COMPLETE • '+s[0];
-    result.textContent=msg;result.classList.add("flash");setTimeout(()=>result.classList.remove("flash"),350);
+    result.textContent=msg;result.classList.add("flash");
+    if(s[2]==="hospital"||s[2]==="police"||s[2]==="fire") cinematic(s[0],["Facility crew mobilized.","Emergency network updated.","Return to the city when ready."]);setTimeout(()=>result.classList.remove("flash"),350);
     status.textContent=s[2]?"SERVICE COMPLETE":"INSPECTION";
     try{window.dispatchEvent(new CustomEvent("l72:feedback",{detail:msg}))}catch(e){}
   }
@@ -46,6 +52,7 @@
     active={...f};open=true;render(c);shell.classList.add("show");
     if(window.Last72Game){window.Last72Game.setPaused(true);window.Last72Game.setPlayerPosition(f.x,f.y+55)}
     status.textContent="FACILITY ACTIVE";result.textContent="ENTERED • "+c.title+" • Select a service.";sayFacility("ENTERED • "+c.title);
+    if(["hospital","police","fire","eoc"].includes(f.type)) cinematic(c.title,["Welcome to the facility.","Your emergency team is standing by.","Choose an operation to continue."]);
   }};
   function sayFacility(t){try{window.dispatchEvent(new CustomEvent("l72:feedback",{detail:t}))}catch(e){}}
   document.getElementById("fiExit").addEventListener("click",exit);
