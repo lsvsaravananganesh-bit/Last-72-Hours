@@ -220,113 +220,13 @@ document.querySelectorAll(".example-command").forEach(b=>b.addEventListener("cli
 $("startMission").addEventListener("click",startMission);$("enterCommand")?.addEventListener("click",()=>{const intro=$("cinematicIntro");if(intro)intro.classList.add("hidden");$("briefingOverlay").classList.remove("hidden");playTone("success");});$("demoMode").addEventListener("click",openJudgeDemo);$("quickDemo").addEventListener("click",runQuickDemo);$("closeReport").addEventListener("click",()=>{$("report").hidden=true;window.scrollTo({top:0,behavior:"smooth"});});$("restart").addEventListener("click",()=>{Object.keys(initialZones).forEach(k=>Object.assign(zoneData[k],JSON.parse(JSON.stringify(initialZones[k]))));Object.assign(state,{selectedZone:"coastal",mode:selectedMode,initialHours:GAME_MODES[selectedMode].hours,hours:GAME_MODES[selectedMode].hours,budget:GAME_MODES[selectedMode].budget,safety:selectedMode==="extreme"?74:selectedMode==="rapid"?78:82,distance:selectedMode==="standard"?720:selectedMode==="rapid"?560:430,confidence:GAME_MODES[selectedMode].confidence,wind:GAME_MODES[selectedMode].wind,turn:1,ended:false,peopleProtected:0,evacuated:0,shelterCapacity:0,vehicles:18,teams:12,food:100,medical:100,communications:100,forecastShift:0,landfallZone:"coastal",history:[],routesOpen:true,hospitalReady:52,trust:62,panic:18,congestion:20,power:86,misinformation:12,shelterStress:0,chainReactions:0,landfallProb:58,rainfall:110,stormRadius:180,trackShift:0,modelA:54,modelB:31,modelC:15,scenario:"Baseline Cyclone",scenarioLevel:1,forecastPressure:1008,objectives:{evacuate:false,shelter:false,warning:false,medical:false,roads:false},commandLog:[],incidents:[],departments:{command:{readiness:86,load:22},operations:{readiness:78,load:34},planning:{readiness:91,load:18},logistics:{readiness:74,load:42},communications:{readiness:68,load:38}},resourceOrders:[]});$("report").hidden=true;$("landfallStage").hidden=true;$("briefingOverlay").classList.add("hidden");$("cinematicIntro")?.classList.add("hidden");const modeLabel=$("activeModeLabel");if(modeLabel)modeLabel.textContent=GAME_MODES[selectedMode].name;showImpact("DECISION IMPACT","Execute an operation to see its immediate and cascading effects.");feed.innerHTML="";$("commandResult").textContent="COMMANDER READY • Awaiting your instruction.";addFeed("SYSTEM • New emergency simulation initialized.");addFeed("FORECAST • Multiple models show different landfall corridors.");addFeed("COMMAND • Protect the city before the 72-hour clock reaches zero.");addFeed("CYCLONE INTELLIGENCE • Track models will update after each command.");showImpact("MISSION BRIEFING","Execute an operation to see its immediate and cascading effects.");playTone("success");render();window.scrollTo({top:0,behavior:"smooth"})});
 addFeed("FORECAST • Three models show different landfall corridors.");addFeed("COMMAND • You control budget, preparedness and response.");addFeed("CYCLONE INTELLIGENCE • Track models will update after each command.");render();
 
-/* OPEN-WORLD FIELD OPERATIONS */
+/* PUBLIC GAME API
+   Keep the simulation state/actions behind a small runtime boundary.
+   Other systems should call these exports instead of reaching into UI DOM. */
 window.Last72State=state;
 window.Last72ZoneData=zoneData;
 window.Last72TakeAction=takeAction;
 window.Last72SelectZone=selectZone;
-
-(function initFieldOperations(){
-  // Legacy DOM field layer is disabled; the canvas engine below is the single active game loop.
-  return;
-  const world=document.getElementById("fieldWorld");
-  const player=document.getElementById("playerUnit");
-  const npcLayer=document.getElementById("npcLayer");
-  const markers=document.getElementById("missionMarkers");
-  if(!world||!player||!npcLayer||!markers)return;
-
-  const fleet=[
-    {id:"rescue",name:"RESCUE SUV",icon:"🚑",speed:1.0,desc:"Fast district response"},
-    {id:"bus",name:"EVAC BUS",icon:"🚌",speed:.72,desc:"Moves large groups"},
-    {id:"ambulance",name:"AMBULANCE",icon:"🏥",speed:.9,desc:"Medical response"},
-    {id:"boat",name:"RESCUE BOAT",icon:"🚤",speed:1.18,desc:"Flooded routes"},
-    {id:"helicopter",name:"HELICOPTER",icon:"🚁",speed:1.45,desc:"Ignores blocked roads"}
-  ];
-  const missions=[
-    {id:"warning",title:"FIRST WARNING",brief:"Reach Coastal Ward and issue the first public warning before panic spreads.",zone:"coastal",action:"warning"},
-    {id:"evac",title:"EVACUATION RUN",brief:"Drive to Harbour and move vulnerable residents to safety.",zone:"harbour",action:"evacuate"},
-    {id:"bridge",title:"BRIDGE COLLAPSE",brief:"Reach Riverside, secure the corridor, then restore the road network.",zone:"riverside",action:"roads"},
-    {id:"medical",title:"HOSPITAL CRISIS",brief:"Reach Old Town and reinforce the hospital network before the surge.",zone:"oldtown",action:"hospital"},
-    {id:"shelter",title:"SHELTER OVERLOAD",brief:"Reach Outer Villages and expand emergency shelter capacity.",zone:"villages",action:"shelter"}
-  ];
-  let px=14,py=72,vehicle="rescue",missionIndex=0,fieldActive=true,keys={},last=performance.now(),npcTick=0;
-  const npcs=[
-    ["Family","coastal",14,31,"civilian"],["FAMILY","harbour",38,20,"civilian"],["DOCTOR","oldtown",55,35,"doctor"],
-    ["VOLUNTEER","riverside",16,63,"volunteer"],["SHOPKEEPER","market",73,55,"civilian"],["PARAMEDIC","hospital",58,49,"doctor"],
-    ["FARMER","villages",51,83,"civilian"],["FIRE CREW","industrial",42,68,"volunteer"]
-  ];
-  const zonePos={coastal:[10,28],harbour:[32,16],oldtown:[53,31],riverside:[13,61],industrial:[40,66],north:[65,15],market:[71,56],villages:[50,82]};
-  function toast(msg){
-    let t=world.querySelector(".field-toast");
-    if(!t){t=document.createElement("div");t.className="field-toast";world.appendChild(t)}
-    t.textContent=msg;t.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.hidden=true,1800);
-  }
-  function renderFleet(){
-    const box=document.getElementById("vehicleList");if(!box)return;
-    box.innerHTML=fleet.map(v=>'<div class="vehicle-row"><div><b>'+v.icon+" "+v.name+'</b><br><span>'+v.desc+" • speed x"+v.speed+'</span></div><button class="'+(vehicle===v.id?"active":"")+'" data-vehicle="'+v.id+'">'+(vehicle===v.id?"ACTIVE":"DEPLOY")+'</button></div>').join("");
-    box.querySelectorAll("[data-vehicle]").forEach(b=>b.onclick=()=>{vehicle=b.dataset.vehicle;fieldActive=true;renderFleet();document.getElementById("vehicleBadge").textContent=fleet.find(v=>v.id===vehicle).name;toast("FIELD UNIT • "+fleet.find(v=>v.id===vehicle).name+" deployed.")});
-  }
-  function renderMission(){
-    const m=missions[missionIndex%missions.length],z=zonePos[m.zone];const ht=document.getElementById("hudMissionTitle"),hb=document.getElementById("hudMissionBrief");if(ht)ht.textContent=m.title;if(hb)hb.textContent=m.brief;
-    const title=document.getElementById("missionTitle"),brief=document.getElementById("missionBrief"),prog=document.getElementById("missionProgress");
-    if(title)title.textContent=m.title;if(brief)brief.textContent=m.brief;if(prog)prog.textContent=Math.min(missionIndex,missions.length)+"/"+missions.length;
-    markers.innerHTML='<div class="mission-marker" style="left:'+z[0]+'%;top:'+z[1]+'%"></div>';
-    document.querySelectorAll(".zone").forEach(n=>n.classList.toggle("field-target",n.dataset.zone===m.zone));
-  }
-  function distanceToZone(zone){
-    const z=zonePos[zone]||[50,50];return Math.hypot(px-z[0],py-z[1]);
-  }
-  function completeMission(){
-    const m=missions[missionIndex];if(!m)return;
-    if(distanceToZone(m.zone)>11){toast("MISSION • Move closer to "+zoneData[m.zone].name);return}
-    window.Last72SelectZone(m.zone);
-    window.Last72TakeAction(m.action,"FIELD");
-    missionIndex++;
-    toast("MISSION COMPLETE • "+m.title);
-    renderMission();
-  }
-  function interact(){
-    const m=missions[missionIndex];
-    if(m&&distanceToZone(m.zone)<12){completeMission();return}
-    const nearest=Object.entries(zonePos).sort((a,b)=>distanceToZone(a[0])-distanceToZone(b[0]))[0];
-    if(nearest&&distanceToZone(nearest[0])<10){window.Last72SelectZone(nearest[0]);toast("FIELD INTEL • "+zoneData[nearest[0]].name+" selected.");return}
-    toast("FIELD OPS • No incident or facility in interaction range.");
-  }
-  function renderNPCs(){
-    npcLayer.innerHTML=npcs.map((n,i)=>'<div class="npc '+n[4]+'" data-i="'+i+'" style="left:'+n[2]+'%;top:'+n[3]+'%"><span>'+n[0]+'</span></div>').join("");
-  }
-  function moveNPCs(){
-    npcs.forEach(n=>{
-      if(Math.random()>.55)return;
-      n[2]=Math.max(4,Math.min(92,n[2]+(Math.random()-.5)*4));
-      n[3]=Math.max(5,Math.min(92,n[3]+(Math.random()-.5)*4));
-    });
-    npcLayer.querySelectorAll(".npc").forEach(el=>{const n=npcs[Number(el.dataset.i)];el.style.left=n[2]+"%";el.style.top=n[3]+"%"});
-  }
-  function update(){
-    const now=performance.now(),dt=Math.min(.04,(now-last)/1000);last=now;
-    if(fieldActive&&!state.ended){
-      const v=fleet.find(x=>x.id===vehicle)||fleet[0],speed=18*v.speed;
-      let dx=0,dy=0;
-      if(keys.w||keys.arrowup)dy-=1;if(keys.s||keys.arrowdown)dy+=1;if(keys.a||keys.arrowleft)dx-=1;if(keys.d||keys.arrowright)dx+=1;
-      if(dx||dy){const len=Math.hypot(dx,dy)||1;px+=dx/len*speed*dt;py+=dy/len*speed*dt;px=Math.max(3,Math.min(97,px));py=Math.max(4,Math.min(95,py));player.style.left=px+"%";player.style.top=py+"%";world.classList.add("field-active")}
-    }
-    npcTick+=dt;if(npcTick>2.2){npcTick=0;moveNPCs()}
-    requestAnimationFrame(update);
-  }
-  window.addEventListener("keydown",e=>{
-    const k=e.key.toLowerCase();
-    if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){keys[k]=true;e.preventDefault()}
-    if(k==="e"){e.preventDefault();interact()}
-    if(k==="v"){e.preventDefault();const i=(fleet.findIndex(x=>x.id===vehicle)+1)%fleet.length;vehicle=fleet[i].id;renderFleet();document.getElementById("vehicleBadge").textContent=fleet[i].name;toast("VEHICLE SWITCH • "+fleet[i].name)}
-    if(k==="m"){e.preventDefault();document.querySelector(".map-panel")?.scrollIntoView({behavior:"smooth"})}
-  });
-  window.addEventListener("keyup",e=>{keys[e.key.toLowerCase()]=false});
-  document.getElementById("missionAction")?.addEventListener("click",()=>{const m=missions[missionIndex];const z=zonePos[m.zone];px=z[0];py=z[1];player.style.left=px+"%";player.style.top=py+"%";toast("GPS LOCK • "+zoneData[m.zone].name+" incident location reached.");setTimeout(completeMission,350)});
-  renderFleet();renderNPCs();renderMission();update();
-  addFeed("FIELD OPERATIONS • You can now leave the command desk and move through Surya Nagar.");
-  addFeed("FIELD OPS • WASD/ARROWS move • E interact • V switch emergency vehicle.");
-})();
 
 /* ============================================================
    LAST 72 HOURS — ACTUAL GAMEPLAY ENGINE
@@ -684,7 +584,7 @@ window.Last72SelectZone=selectZone;
   function frame(now){
     const dt=Math.min(.033,(now-last)/1000);last=now;interactCooldown=Math.max(0,interactCooldown-dt);
     if(!paused&&!mapOpen){movePlayer(dt);updateNPC(dt);updateTraffic(dt);updateEmergencyAI(dt);floodLevel=Math.min(100,floodLevel+dt*(state.rainfall>220?.7:.18));if(floodLevel>62)bridgeDown=true;}
-    camera.x=clamp(player.x-canvas.width/2,0,Math.max(0,W-canvas.width));camera.y=clamp(player.y-canvas.height/2,0,Math.max(0,H-canvas.height));
+    camera.x=clamp(player.x-canvas.width/2,0,Math.max(0,W-canvas.width));camera.y=clamp(player.y-canvas.height/2,0,Math.max(0,H-canvas.height));window.Last72Camera={x:camera.x,y:camera.y,width:canvas.width,height:canvas.height};
     ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#07131a";ctx.fillRect(0,0,canvas.width,canvas.height);
     drawRoads();drawFlood();drawBuildings();drawZones();drawTraffic();drawVehicles();drawNPCs();drawEmergencyWorld();drawMission();drawStorm();drawPlayer();drawParticles();drawUI();
     requestAnimationFrame(frame);
