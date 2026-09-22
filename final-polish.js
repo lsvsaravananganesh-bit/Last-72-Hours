@@ -93,8 +93,8 @@
     if(/mission complete|next objective|campaign objective/.test(lower))flash("COMMAND UPDATE",msg,kind);
   });
 
-  // Keep the expensive living-city overlay at a sensible visual priority.
-  function tick(){
+  // UI coordination is intentionally throttled; the gameplay canvas owns the frame loop.
+  setInterval(()=>{
     render();
     const dw=window.Last72DynamicWorld;
     if(dw){
@@ -102,9 +102,7 @@
       const hud=document.querySelector(".dynamic-ai-hud");
       if(hud)hud.classList.toggle("urgent",(s.help||0)>0||(s.fires||0)>0);
     }
-    requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
+  },120);
 
   setTimeout(()=>tip.classList.add("soft-hide"),95000);
 })();
