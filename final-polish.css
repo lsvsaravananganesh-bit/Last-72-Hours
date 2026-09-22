@@ -85,3 +85,6 @@ body.final-opening .systems-right{opacity:.72}
 .systems-hud,.dynamic-ai-hud,.final-mission-rail,.final-demo-tip,.l72-nav,.l72-tip{display:none!important}
 .l72-tr{top:22px!important;left:22px!important;width:270px!important;background:transparent!important;border:0!important;padding:0!important;opacity:0!important;pointer-events:none!important}
 @media(max-width:760px){.clean-mission{left:10px;top:10px;width:210px;padding:10px}.clean-mission b{font-size:13px}.clean-stats{right:10px;top:10px}.clean-stats div{min-width:58px;padding:8px}.clean-controls{bottom:10px;font-size:6px}.clean-mission small{font-size:7px}}
+
+/* Minimal tactical map */
+.gmp-body{grid-template-columns:1fr!important}.gmp-info{display:none!important}.gmp-legend{opacity:.8}
