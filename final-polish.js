@@ -42,6 +42,15 @@
     const step=document.getElementById("fmrStep");
     if(step)step.textContent=i<CORE.length?"MISSION "+(i+1)+" / "+CORE.length:"LANDFALL READY";
     const m=CORE[i];
+    const liveMission=g.getMission();
+    const stepIndex=(g.getMissionStep?g.getMissionStep():0);
+    const stepData=(g.getMissionProcedure?g.getMissionProcedure():null);
+    const title=document.getElementById("hudMissionTitle");
+    const brief=document.getElementById("hudMissionBrief");
+    const target=document.getElementById("hudTarget");
+    if(title&&liveMission) title.textContent=liveMission.title;
+    if(brief&&liveMission) brief.textContent=(stepData&&stepData[0] ? "STEP "+(stepIndex+1)+"/"+(liveMission.procedure?.length||1)+" • "+stepData[0] : liveMission.text);
+    if(target&&liveMission) target.textContent=liveMission.zone.toUpperCase()+" • E TO INTERACT";
     const text=document.getElementById("finalTipText");
     if(text&&m)text.textContent=m[2]+"  •  E = interact";
     if(i!==lastIndex){
