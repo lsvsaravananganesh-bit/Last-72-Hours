@@ -28,7 +28,7 @@
   const fires=[];
   const calls=[];
   const missionHistory=[];
-  let mission=null,lastSpawn=-10,elapsed=0,toastTimer=0,missionSerial=0;
+  let mission=null,lastSpawn=-10,elapsed=0,toastTimer=0,missionSerial=0,lastDraw=0;
 
   function rand(a,b){return a+Math.random()*(b-a)}
   function pick(a){return a[Math.floor(Math.random()*a.length)]}
@@ -236,7 +236,7 @@
       calls.forEach(c=>{c.age+=dt;if(c.age>12)c.critical=true});
       const tags=document.getElementById("daiTags");
       if(tags)tags.innerHTML='<span>'+calls.length+' HELP</span><span>'+fires.length+' FIRES</span><span>'+crews.length+' CREWS</span><span>'+buildings.filter(b=>b.blocked).length+' BLOCKED</span><span>'+missionHistory.filter(x=>x.status==="SUCCESS").length+' DONE</span>';
-      draw();
+      if(t-lastDraw>33){lastDraw=t;draw();}
     }
     requestAnimationFrame(loop);
   }
