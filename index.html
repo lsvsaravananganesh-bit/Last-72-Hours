@@ -9,26 +9,56 @@
 <body>
 <header class="topbar"><div class="brand"><span class="brand-mark">72</span><div><strong>LAST 72 HOURS</strong><small>EMERGENCY OPERATIONS SIMULATION</small></div></div><div class="status">● SIMULATION LIVE</div></header>
 <main class="app">
-<section class="hero"><div><p class="eyebrow">SURYA NAGAR • COASTAL DISTRICT</p><h1>You do not fight the cyclone.<br><span>You prepare the city to survive it.</span></h1><p class="intro">You are the Emergency Operations Commander. Every 6 hours you choose how to spend limited resources before landfall.</p></div><div class="countdown-card"><span>TIME TO LANDFALL</span><strong id="clock">72:00</strong><small id="phase">PREPARATION PHASE</small></div></section>
+<section class="hero"><div><p class="eyebrow">SURYA NAGAR • COASTAL DISTRICT</p><h1>You do not fight the cyclone.<br><span>You prepare the city to survive it.</span></h1><p class="intro">You are the Emergency Operations Commander. Every 6 hours you choose how to spend limited resources before landfall. Forecasts are uncertain and events can cascade.</p></div><div class="countdown-card"><span>TIME TO LANDFALL</span><strong id="clock">72:00</strong><small id="phase">PREPARATION PHASE</small></div></section>
+
 <section class="dashboard">
-<aside class="panel briefing"><div class="panel-title"><span>COMMAND BRIEFING</span><span id="turn">TURN 1 / 12</span></div><div class="metrics"><div><span>Budget</span><strong id="budget">₹100</strong></div><div><span>City safety</span><strong id="safety">82%</strong></div><div><span>Cyclone distance</span><strong id="distance">720 km</strong></div><div><span>Forecast confidence</span><strong id="confidence">61%</strong></div></div><div class="warning"><strong>ALERT</strong><p id="alert">Forecast models disagree on landfall. Prepare for uncertainty.</p></div><div class="feed"><div class="panel-title"><span>EMERGENCY FEED</span></div><div id="feed"></div></div></aside>
-<section class="panel map-panel"><div class="panel-title"><span>CITY OPERATIONS MAP</span><span id="wind">WIND 55 km/h</span></div><div class="city-map"><div class="coast"></div><div class="route route-a"></div><div class="route route-b"></div><div class="route route-c"></div>
-<div class="zone" data-zone="coastal" style="left:5%;top:20%"><b>01</b><span>Coastal Ward</span><i>HIGH RISK</i></div>
-<div class="zone" data-zone="harbour" style="left:27%;top:8%"><b>02</b><span>Harbour</span><i>HIGH RISK</i></div>
-<div class="zone" data-zone="oldtown" style="left:48%;top:23%"><b>03</b><span>Old Town</span><i>WATCH</i></div>
-<div class="zone" data-zone="riverside" style="left:8%;top:55%"><b>04</b><span>Riverside</span><i>WATCH</i></div>
-<div class="zone" data-zone="industrial" style="left:35%;top:58%"><b>05</b><span>Industrial</span><i>WATCH</i></div>
-<div class="zone" data-zone="north" style="left:60%;top:7%"><b>06</b><span>North Hills</span><i>LOW</i></div>
-<div class="zone" data-zone="market" style="left:66%;top:48%"><b>07</b><span>Market District</span><i>LOW</i></div>
-<div class="zone" data-zone="villages" style="left:45%;top:76%"><b>08</b><span>Outer Villages</span><i>WATCH</i></div>
-<div class="storm" id="storm">CYCLONE</div></div><div class="legend">HIGH RISK • WATCH • LOWER RISK &nbsp; | &nbsp; Click a zone to inspect</div></section>
-<aside class="panel actions"><div class="panel-title">COMMAND ACTIONS</div><p class="hint">Choose one action per turn. Your choices change city safety.</p>
-<button class="action" data-action="evacuate"><b>Evacuate vulnerable families</b><span>Move people to shelters • Cost ₹15</span></button>
-<button class="action" data-action="shelter"><b>Prepare emergency shelter</b><span>Food, beds and backup power • Cost ₹10</span></button>
-<button class="action" data-action="warning"><b>Send public warning</b><span>Improve compliance and trust • Cost ₹5</span></button>
-<button class="action" data-action="hospital"><b>Reinforce hospital readiness</b><span>Generator, medicine and staff • Cost ₹12</span></button>
-<button class="action" data-action="roads"><b>Secure critical roads</b><span>Clear routes and position vehicles • Cost ₹8</span></button>
-<div class="decision-box" id="decisionBox"><strong>COMMANDER NOTE</strong><p>Make your first decision. There is no perfect forecast.</p></div></aside>
+<aside class="panel briefing">
+<div class="panel-title"><span>COMMAND BRIEFING</span><span id="turn">TURN 1 / 12</span></div>
+<div class="metrics">
+<div><span>Budget</span><strong id="budget">₹100</strong></div>
+<div><span>City safety</span><strong id="safety">82%</strong></div>
+<div><span>Cyclone distance</span><strong id="distance">720 km</strong></div>
+<div><span>Forecast confidence</span><strong id="confidence">61%</strong></div>
+</div>
+<div class="warning"><strong>ALERT</strong><p id="alert">Forecast models disagree on landfall. Prepare for uncertainty.</p></div>
+<div class="feed"><div class="panel-title"><span>EMERGENCY FEED</span></div><div id="feed"></div></div>
+</aside>
+
+<section class="panel map-panel">
+<div class="panel-title"><span>CITY OPERATIONS MAP</span><span id="wind">WIND 55 km/h</span></div>
+<div class="city-map">
+<div class="coast"></div><div class="route route-a"></div><div class="route route-b"></div><div class="route route-c"></div>
+<div class="zone" data-zone="coastal" style="left:5%;top:20%"><b>01</b><span>Coastal Ward</span><i>CRITICAL RISK</i></div>
+<div class="zone" data-zone="harbour" style="left:27%;top:8%"><b>02</b><span>Harbour</span><i>CRITICAL RISK</i></div>
+<div class="zone" data-zone="oldtown" style="left:48%;top:23%"><b>03</b><span>Old Town</span><i>HIGH RISK</i></div>
+<div class="zone" data-zone="riverside" style="left:8%;top:55%"><b>04</b><span>Riverside</span><i>HIGH RISK</i></div>
+<div class="zone" data-zone="industrial" style="left:35%;top:58%"><b>05</b><span>Industrial</span><i>HIGH RISK</i></div>
+<div class="zone" data-zone="north" style="left:60%;top:7%"><b>06</b><span>North Hills</span><i>MODERATE RISK</i></div>
+<div class="zone" data-zone="market" style="left:66%;top:48%"><b>07</b><span>Market District</span><i>MODERATE RISK</i></div>
+<div class="zone" data-zone="villages" style="left:45%;top:76%"><b>08</b><span>Outer Villages</span><i>HIGH RISK</i></div>
+<div class="storm" id="storm">CYCLONE</div>
+</div>
+<div class="legend">CRITICAL • HIGH • MODERATE • LOW &nbsp; | &nbsp; Click any zone for population, vulnerability and shelter intelligence</div>
 </section>
-<section class="after-panel" id="report" hidden><div class="report-card"><p class="eyebrow">SIMULATION COMPLETE</p><h2>LANDFALL REPORT</h2><div class="score-grid"><div><span>Final safety</span><strong id="finalSafety">—</strong></div><div><span>People protected</span><strong id="people">—</strong></div><div><span>Resources left</span><strong id="leftBudget">—</strong></div><div><span>Preparedness grade</span><strong id="grade">—</strong></div></div><p id="reportText"></p><button id="restart" class="primary">Run another command</button></div></section>
-</main><script src="game.js"></script></body></html>
+
+<aside class="panel actions">
+<div class="panel-title">COMMAND ACTIONS</div>
+<p class="hint">Choose one action per turn. Every decision consumes time and resources.</p>
+<button class="action" data-action="evacuate"><b>Evacuate vulnerable families</b><span>Deploy vehicles to the highest-risk zones • Cost ₹15</span></button>
+<button class="action" data-action="shelter"><b>Prepare emergency shelter</b><span>Add capacity and sustain supplies • Cost ₹10</span></button>
+<button class="action" data-action="warning"><b>Send public warning</b><span>Improve communication and community readiness • Cost ₹5</span></button>
+<button class="action" data-action="hospital"><b>Reinforce hospital readiness</b><span>Protect medical continuity and emergency response • Cost ₹12</span></button>
+<button class="action" data-action="roads"><b>Secure critical roads</b><span>Clear routes and reposition emergency vehicles • Cost ₹8</span></button>
+<div class="decision-box" id="decisionBox"><strong>OPERATIONS STATUS</strong><p>Evacuated: 0 residents.</p><p>Vehicles: 18 • Teams: 12 • Food: 100% • Medical: 100% • Communications: 100%</p></div>
+</aside>
+</section>
+
+<section class="after-panel" id="report" hidden>
+<div class="report-card"><p class="eyebrow">SIMULATION COMPLETE</p><h2>LANDFALL REPORT</h2>
+<div class="score-grid"><div><span>Final safety</span><strong id="finalSafety">—</strong></div><div><span>People protected</span><strong id="people">—</strong></div><div><span>Resources left</span><strong id="leftBudget">—</strong></div><div><span>Preparedness grade</span><strong id="grade">—</strong></div></div>
+<p id="reportText"></p><button id="restart" class="primary">Run another command</button>
+</div>
+</section>
+</main>
+<script src="game.js"></script>
+</body></html>
