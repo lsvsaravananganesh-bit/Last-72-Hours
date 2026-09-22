@@ -28,7 +28,7 @@
   const fires=[];
   const calls=[];
   const missionHistory=[];
-  let mission=null,lastSpawn=0,elapsed=0,toastTimer=0;
+  let mission=null,lastSpawn=0,elapsed=0,toastTimer=0,missionSerial=0;
 
   function rand(a,b){return a+Math.random()*(b-a)}
   function pick(a){return a[Math.floor(Math.random()*a.length)]}
@@ -84,23 +84,28 @@
 
   function chooseMission(){
     const p=consequenceProfile();
-    let type, target, title, brief;
-    if(calls.some(c=>c.critical||c.age>10)){
-      const c=pick(calls.filter(c=>c.critical||c.age>10));
-      type="rescue";target=c;title="DISTRESS CALL";brief="Reach the civilian before the situation becomes critical.";
-    }else if(fires.length>=2){
-      const f=pick(fires);type="fire";target=f;title="URBAN FIRE";brief="Contain the fire before it spreads to adjacent structures.";
+    let type, target, title, brief, branch="STABILIZE";
+    const unresolvedCalls=calls.filter(c=>c.critical||c.age>10); const activeFires=fires.filter(f=>f.building.burning);
+    if(unresolvedCalls.length){
+      const c=pick(unresolvedCalls);
+      type="rescue";target=c;title="DISTRESS CALL";brief="Reach the civilian before the situation becomes critical.";branch="LIVES";
+    }else if(activeFires.length>=2){
+      const f=pick(activeFires);type="fire";target=f;title="URBAN FIRE";brief="Contain the fire before it spreads to adjacent structures.";branch="INFRASTRUCTURE";
     }else if(!p.routes){
-      target=pick(zones);type="repair";title="CORRIDOR FAILURE";brief="Restore an evacuation corridor after infrastructure damage.";
-    }else if(p.panic>60){
-      target=pick(zones);type="calm";title="PUBLIC PANIC";brief="Broadcast clear information and stabilize the district.";
-    }else if(p.trust<50){
-      target=pick(zones);type="warning";title="TRUST BREAKDOWN";brief="Issue a verified warning and rebuild public confidence.";
+      target=pick(zones);type="repair";title="CORRIDOR FAILURE";brief="Restore an evacuation corridor after infrastructure damage.";branch="INFRASTRUCTURE";
+    }else if(p.panic>70){
+      target=pick(zones);type="calm";title="PUBLIC PANIC";brief="Stabilize the district before evacuation routes become overloaded.";branch="PUBLIC_ORDER";
+    }else if(p.trust<45||Number(state.misinformation||0)>35){
+      target=pick(zones);type="warning";title="TRUST BREAKDOWN";brief="Issue verified information and rebuild public confidence.";branch="INFORMATION";
+    }else if(Number(state.hospitalReady||50)<40){
+      target=pick(zones);type="medical";title="MEDICAL CONTINUITY";brief="Keep emergency medical services operational before the next surge.";branch="LIVES";
+    }else if(Number(state.congestion||0)>70){
+      target=pick(zones);type="traffic";title="GRIDLOCK";brief="Open a response corridor before emergency vehicles are trapped.";branch="INFRASTRUCTURE";
     }else{
-      target=pick(zones);type="evacuate";brief="Move vulnerable residents before the storm corridor shifts.";title="EVACUATION WINDOW";
+      target=pick(zones);type="evacuate";brief="Move vulnerable residents before the storm corridor shifts.";title="EVACUATION WINDOW";branch="LIVES";
     }
-    mission={type,target,title,brief,started:elapsed};
-    missionHistory.push({type,title,time:elapsed});
+    mission={id:++missionSerial,type,target,title,brief,branch,started:elapsed,deadline:elapsed+(type==="rescue"?16:20),status:"ACTIVE"};
+    missionHistory.push({id:mission.id,type,title,time:elapsed,branch,status:"STARTED"});
     if(missionHistory.length>8)missionHistory.shift();
     const n=document.getElementById("daiMission");if(n)n.textContent=title;
     notify(title+" • "+brief);
@@ -162,7 +167,17 @@
     if(mission.type==="repair"){state.routesOpen=true;state.congestion=Math.max(0,state.congestion-10)}
     if(mission.type==="calm"){state.panic=Math.max(0,state.panic-15);state.trust=Math.min(100,state.trust+8)}
     if(mission.type==="warning"){state.trust=Math.min(100,state.trust+6)}
-    notify("MISSION COMPLETE • WORLD STATE UPDATED");
+    const expired=elapsed>mission.deadline;
+    if(mission.type==="rescue"&&mission.target?.civilian){mission.target.civilian.state="RESCUED";mission.target.civilian.help=false;const i=calls.indexOf(mission.target);if(i>=0)calls.splice(i,1);}
+    if(mission.type==="fire"&&mission.target?.building){mission.target.intensity=0;mission.target.building.burning=false;mission.target.building.health=Math.min(100,mission.target.building.health+10);}
+    if(mission.type==="repair"&&!expired){state.routesOpen=true;state.congestion=Math.max(0,state.congestion-10)}
+    if(mission.type==="calm"&&!expired){state.panic=Math.max(0,state.panic-18);state.trust=Math.min(100,state.trust+8)}
+    if(mission.type==="warning"&&!expired){state.trust=Math.min(100,state.trust+7);state.misinformation=Math.max(0,(state.misinformation||0)-12)}
+    if(mission.type==="medical"&&!expired){state.hospitalReady=Math.min(100,(state.hospitalReady||50)+14);state.medical=Math.min(100,(state.medical||50)+6)}
+    if(mission.type==="traffic"&&!expired){state.congestion=Math.max(0,state.congestion-18);state.routesOpen=true}
+    if(!expired){state.peopleProtected=(state.peopleProtected||0)+(mission.type==="rescue"?1:0);state.evacuated=(state.evacuated||0)+(mission.type==="rescue"?1:0);state.safety=Math.min(100,state.safety+(mission.type==="fire"?2:1));notify("MISSION COMPLETE • "+mission.branch+" BRANCH");}
+    else{state.safety=Math.max(0,state.safety-4);state.panic=Math.min(100,state.panic+10);state.chainReactions=(state.chainReactions||0)+1;notify("MISSION FAILED • CONSEQUENCES ESCALATING");}
+    const record=missionHistory[missionHistory.length-1];if(record){record.status=expired?"FAILED":"SUCCESS";record.finished=elapsed;}
     mission=null;setTimeout(chooseMission,900);
   }
 
@@ -216,10 +231,11 @@
       if(!mission && elapsed>5)chooseMission();
       calls.forEach(c=>{c.age+=dt;if(c.age>12)c.critical=true});
       const tags=document.getElementById("daiTags");
-      if(tags)tags.innerHTML='<span>'+calls.length+' HELP</span><span>'+fires.length+' FIRES</span><span>'+crews.length+' CREWS</span><span>'+buildings.filter(b=>b.blocked).length+' BLOCKED</span>';
+      if(tags)tags.innerHTML='<span>'+calls.length+' HELP</span><span>'+fires.length+' FIRES</span><span>'+crews.length+' CREWS</span><span>'+buildings.filter(b=>b.blocked).length+' BLOCKED</span><span>'+missionHistory.filter(x=>x.status==="SUCCESS").length+' DONE</span>';
       draw();
     }
     requestAnimationFrame(loop);
   }
+  window.Last72DynamicWorld={getMission:()=>mission,getHistory:()=>missionHistory.slice(),getStats:()=>({help:calls.length,fires:fires.length,crews:crews.length,blocked:buildings.filter(b=>b.blocked).length})};
   requestAnimationFrame(loop);
 })();
