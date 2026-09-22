@@ -14,23 +14,17 @@
 <section class="dashboard">
 <aside class="panel briefing">
 <div class="panel-title"><span>COMMAND BRIEFING</span><span id="turn">TURN 1 / 12</span></div>
-<div class="metrics">
-<div><span>Budget</span><strong id="budget">₹100</strong></div>
-<div><span>City safety</span><strong id="safety">82%</strong></div>
-<div><span>Cyclone distance</span><strong id="distance">720 km</strong></div>
-<div><span>Forecast confidence</span><strong id="confidence">61%</strong></div>
-</div>
-<div class="warning"><strong>ALERT</strong><p id="alert">Forecast models disagree on landfall. Prepare for uncertainty.</p></div><div class="forecast-panel"><div class="mini-title">DYNAMIC CYCLONE INTELLIGENCE</div><div class="forecast-grid"><div><span>Landfall probability</span><strong id="landfallProb">58%</strong></div><div><span>Rainfall</span><strong id="rainfall">110 mm</strong></div><div><span>Storm radius</span><strong id="stormRadius">180 km</strong></div><div><span>Track shift</span><strong id="trackShift">+0 km</strong></div></div><div class="models" id="models">MODEL A • Coastal 54% &nbsp; MODEL B • Harbour 31% &nbsp; MODEL C • Riverside 15%</div></div>
+<div class="metrics"><div><span>Budget</span><strong id="budget">₹100</strong></div><div><span>City safety</span><strong id="safety">82%</strong></div><div><span>Cyclone distance</span><strong id="distance">720 km</strong></div><div><span>Forecast confidence</span><strong id="confidence">61%</strong></div></div>
+<div class="warning"><strong>ALERT</strong><p id="alert">Forecast models disagree on landfall. Prepare for uncertainty.</p></div>
+<div class="forecast-panel"><div class="mini-title">DYNAMIC CYCLONE INTELLIGENCE</div><div class="forecast-grid"><div><span>Landfall probability</span><strong id="landfallProb">58%</strong></div><div><span>Rainfall</span><strong id="rainfall">110 mm</strong></div><div><span>Storm radius</span><strong id="stormRadius">180 km</strong></div><div><span>Track shift</span><strong id="trackShift">+0 km</strong></div></div><div class="models" id="models">MODEL A • 54% MODEL B • 31% MODEL C • 15%</div></div>
 <div class="feed"><div class="panel-title"><span>EMERGENCY FEED</span></div><div id="feed"></div></div>
 </aside>
 
 <section class="panel map-panel">
 <div class="panel-title"><span>CITY OPERATIONS MAP</span><span id="wind">WIND 55 km/h</span></div>
 <div class="city-map">
-<div class="coast"></div>
-<div class="route route-a" id="routeA"></div><div class="route route-b" id="routeB"></div><div class="route route-c" id="routeC"></div>
+<div class="coast"></div><div class="route route-a" id="routeA"></div><div class="route route-b" id="routeB"></div><div class="route route-c" id="routeC"></div>
 <div class="route-marker" id="markerA" style="left:17%;top:49%"></div><div class="route-marker" id="markerB" style="left:54%;top:39%"></div><div class="route-marker" id="markerC" style="left:38%;top:67%"></div>
-
 <div class="zone" data-zone="coastal" style="left:5%;top:20%"><b>01</b><span>Coastal Ward</span><i>CRITICAL RISK</i></div>
 <div class="zone" data-zone="harbour" style="left:27%;top:8%"><b>02</b><span>Harbour</span><i>CRITICAL RISK</i></div>
 <div class="zone" data-zone="oldtown" style="left:48%;top:23%"><b>03</b><span>Old Town</span><i>HIGH RISK</i></div>
@@ -39,35 +33,25 @@
 <div class="zone" data-zone="north" style="left:60%;top:7%"><b>06</b><span>North Hills</span><i>MODERATE RISK</i></div>
 <div class="zone" data-zone="market" style="left:66%;top:48%"><b>07</b><span>Market District</span><i>MODERATE RISK</i></div>
 <div class="zone" data-zone="villages" style="left:45%;top:76%"><b>08</b><span>Outer Villages</span><i>HIGH RISK</i></div>
-
-<div class="facility shelter" data-facility="shelter1" style="left:58%;top:62%">S<span class="facility-label">NORTH SHELTER</span></div>
-<div class="facility shelter" data-facility="shelter2" style="left:73%;top:68%">S<span class="facility-label">CENTRAL SHELTER</span></div>
-<div class="facility shelter" data-facility="shelter3" style="left:26%;top:43%">S<span class="facility-label">WEST SHELTER</span></div>
-<div class="facility hospital" data-facility="hospital1" style="left:50%;top:47%">H<span class="facility-label">CITY HOSPITAL</span></div>
-<div class="facility hospital" data-facility="hospital2" style="left:70%;top:25%">H<span class="facility-label">NORTH HOSPITAL</span></div>
-<div class="storm" id="storm">CYCLONE</div>
-</div>
+<div class="facility shelter" data-facility="shelter1" style="left:58%;top:62%">S<span class="facility-label">NORTH SHELTER</span></div><div class="facility shelter" data-facility="shelter2" style="left:73%;top:68%">S<span class="facility-label">CENTRAL SHELTER</span></div><div class="facility shelter" data-facility="shelter3" style="left:26%;top:43%">S<span class="facility-label">WEST SHELTER</span></div>
+<div class="facility hospital" data-facility="hospital1" style="left:50%;top:47%">H<span class="facility-label">CITY HOSPITAL</span></div><div class="facility hospital" data-facility="hospital2" style="left:70%;top:25%">H<span class="facility-label">NORTH HOSPITAL</span></div>
+<div class="storm" id="storm">CYCLONE</div></div>
 <div class="legend">● ROUTE &nbsp; S SHELTER &nbsp; H HOSPITAL &nbsp; | &nbsp; Click a zone or facility to inspect operations</div>
 </section>
 
 <aside class="panel actions">
-<div class="panel-title">COMMAND ACTIONS</div>
-<p class="hint">Choose one action per turn. Every decision consumes time and resources.</p>
+<div class="panel-title">COMMAND ACTIONS</div><p class="hint">Choose one action per turn — or issue an operational command in natural language.</p>
 <button class="action" data-action="evacuate"><b>Evacuate vulnerable families</b><span>Deploy vehicles to the highest-risk zones • Cost ₹15</span></button>
 <button class="action" data-action="shelter"><b>Prepare emergency shelter</b><span>Add capacity and sustain supplies • Cost ₹10</span></button>
 <button class="action" data-action="warning"><b>Send public warning</b><span>Improve communication and community readiness • Cost ₹5</span></button>
 <button class="action" data-action="hospital"><b>Reinforce hospital readiness</b><span>Protect medical continuity and emergency response • Cost ₹12</span></button>
 <button class="action" data-action="roads"><b>Secure critical roads</b><span>Clear routes and reposition emergency vehicles • Cost ₹8</span></button>
+<div class="ai-commander"><div class="ai-title"><span>AI EMERGENCY COMMANDER</span><span class="ai-live">LOCAL AI</span></div><p>Type what you want the operations team to do. The commander converts your instruction into an available action and explains the decision.</p><div class="command-examples"><button type="button" class="example-command">Evacuate vulnerable residents</button><button type="button" class="example-command">Prepare more shelters</button><button type="button" class="example-command">Reinforce hospitals</button><button type="button" class="example-command">Secure the roads</button></div><form id="commandForm"><input id="commandInput" autocomplete="off" placeholder="e.g. Evacuate Coastal Ward and Harbour" /><button class="primary" type="submit">EXECUTE</button></form><div class="command-result" id="commandResult">COMMANDER READY • Awaiting your instruction.</div></div>
 <div class="decision-box" id="decisionBox"><strong>OPERATIONS STATUS</strong><p>Evacuated: 0 residents.</p><p>Vehicles: 18 • Teams: 12 • Food: 100% • Medical: 100% • Communications: 100%</p></div>
 </aside>
 </section>
 
-<section class="after-panel" id="report" hidden>
-<div class="report-card"><p class="eyebrow">SIMULATION COMPLETE</p><h2>LANDFALL REPORT</h2>
-<div class="score-grid"><div><span>Final safety</span><strong id="finalSafety">—</strong></div><div><span>People protected</span><strong id="people">—</strong></div><div><span>Resources left</span><strong id="leftBudget">—</strong></div><div><span>Preparedness grade</span><strong id="grade">—</strong></div></div>
-<p id="reportText"></p><button id="restart" class="primary">Run another command</button>
-</div>
-</section>
+<section class="after-panel" id="report" hidden><div class="report-card"><p class="eyebrow">SIMULATION COMPLETE</p><h2>LANDFALL REPORT</h2><div class="score-grid"><div><span>Final safety</span><strong id="finalSafety">—</strong></div><div><span>People protected</span><strong id="people">—</strong></div><div><span>Resources left</span><strong id="leftBudget">—</strong></div><div><span>Preparedness grade</span><strong id="grade">—</strong></div></div><p id="reportText"></p><button id="restart" class="primary">Run another command</button></div></section>
 </main>
 <script src="game.js"></script>
 </body></html>
