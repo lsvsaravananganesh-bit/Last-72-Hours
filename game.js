@@ -443,7 +443,7 @@ window.Last72SelectZone=selectZone;
       if(!n.rescued && dist(n,player)<32 && vehicleActive){
         n.rescued=true;n.state="RESCUED";n.vx=0;n.vy=0;score+=20;
         say("CIVILIAN RESCUED • +20 RESPONSE XP");
-        try{state.evacuated=(state.evacuated||0)+1;state.safety=Math.min(100,state.safety+1)}catch(e){}
+        try{state.evacuated=(state.evacuated||0)+1;state.peopleProtected=(state.peopleProtected||0)+1;state.safety=Math.min(100,state.safety+1)}catch(e){}
       }
     }
   }
@@ -483,6 +483,16 @@ window.Last72SelectZone=selectZone;
   function drawBuildings(){
     buildings.forEach((b,i)=>{const x=b.x-camera.x,y=b.y-camera.y;ctx.fillStyle=i%3===0?"#132630":"#10212a";ctx.fillRect(x,y,b.w,b.h);ctx.strokeStyle="#28424b";ctx.strokeRect(x,y,b.w,b.h);for(let wx=x+12;wx<x+b.w-8;wx+=24){ctx.fillStyle="#47626a";ctx.fillRect(wx,y+12,7,5)}});
   }
+  function drawFlood(){
+    if(floodLevel<8)return;
+    const alpha=Math.min(.38,floodLevel/260);
+    ctx.fillStyle="rgba(45,145,205,"+alpha+")";
+    const waterY=920-floodLevel*2.4;
+    ctx.fillRect(0,waterY-camera.y,W,360+camera.y);
+    ctx.strokeStyle="rgba(130,220,255,.45)";ctx.lineWidth=2;
+    for(let i=0;i<6;i++){const yy=waterY+30+i*42-camera.y;ctx.beginPath();for(let x=0;x<canvas.width;x+=55){ctx.quadraticCurveTo(x+14,yy-5,x+28,yy);ctx.quadraticCurveTo(x+42,yy+5,x+55,yy)}ctx.stroke()}
+    ctx.fillStyle="#b9efff";ctx.font="bold 10px Arial";ctx.fillText("FLOOD LEVEL "+Math.round(floodLevel)+"%",24,canvas.height-34);
+  }
   function drawZones(){
     zones.forEach(z=>{const x=z.x-camera.x,y=z.y-camera.y;ctx.fillStyle=z.risk==="CRITICAL"?"rgba(255,74,91,.10)":z.risk==="HIGH"?"rgba(255,170,70,.08)":"rgba(85,225,190,.055)";ctx.fillRect(x,y,z.w,z.h);ctx.strokeStyle=z.key===state.selectedZone?"#9fffe5":"rgba(120,160,170,.25)";ctx.lineWidth=z.key===state.selectedZone?3:1;ctx.strokeRect(x,y,z.w,z.h);ctx.fillStyle="#cfe1e5";ctx.font="bold 14px Arial";ctx.fillText(z.name,x+12,y+24);ctx.fillStyle=z.risk==="CRITICAL"?"#ff6978":z.risk==="HIGH"?"#ffc857":"#72e6c4";ctx.font="10px Arial";ctx.fillText(z.risk+" RISK",x+12,y+42)});
   }
@@ -514,7 +524,7 @@ window.Last72SelectZone=selectZone;
     if(!paused&&!mapOpen){movePlayer(dt);updateNPC(dt);updateTraffic(dt);floodLevel=Math.min(100,floodLevel+dt*(state.rainfall>220?.7:.18));if(floodLevel>62)bridgeDown=true;}
     camera.x=clamp(player.x-canvas.width/2,0,Math.max(0,W-canvas.width));camera.y=clamp(player.y-canvas.height/2,0,Math.max(0,H-canvas.height));
     ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#07131a";ctx.fillRect(0,0,canvas.width,canvas.height);
-    drawRoads();drawBuildings();drawZones();drawTraffic();drawVehicles();drawNPCs();drawMission();drawStorm();drawPlayer();drawParticles();drawUI();
+    drawRoads();drawFlood();drawBuildings();drawZones();drawTraffic();drawVehicles();drawNPCs();drawMission();drawStorm();drawPlayer();drawParticles();drawUI();
     requestAnimationFrame(frame);
   }
   addEventListener("keydown",e=>{
