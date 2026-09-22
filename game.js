@@ -253,10 +253,18 @@ window.Last72SelectZone=selectZone;
   canvas.setAttribute("aria-label","LAST 72 HOURS playable emergency response city");
   map.appendChild(canvas);
   const ctx=canvas.getContext("2d");
+  const gameMenu=document.createElement("div");
+  gameMenu.id="gameMenu";gameMenu.className="game-menu";
+  gameMenu.innerHTML='<div class="gm-card"><div class="gm-kicker">SATELLITE COMMAND // SURYA NAGAR</div><h2>LAST 72 HOURS</h2><p>FIELD COMMAND PAUSED</p><div class="gm-actions"><button data-gm="resume">RESUME GAME</button><button data-gm="map">TACTICAL MAP</button><button data-gm="controls">CONTROLS</button><button data-gm="restart">RESTART MISSION</button></div><div id="gmControls" class="gm-controls" hidden><b>CONTROLS</b><span>W A S D / ARROWS — MOVE</span><span>E — INTERACT / RESCUE</span><span>V — VEHICLE</span><span>M — MAP</span><span>1–5 — COMMANDS</span><span>ESC — MENU</span></div></div>';
+  map.appendChild(gameMenu);
+  const gameMapPanel=document.createElement("div");gameMapPanel.id="gameMapPanel";gameMapPanel.className="game-map-panel";
+  gameMapPanel.innerHTML='<div class="gmp-head"><div><b>TACTICAL CITY MAP</b><span>LIVE OPERATIONAL VIEW</span></div><button id="closeGameMap">BACK TO FIELD</button></div><canvas id="gameMapCanvas"></canvas><div class="gmp-legend"><b>LEGEND</b><span>COMMANDER</span><span>MISSION</span><span>VEHICLES</span><span>HELP / FIRE</span></div>';
+  map.appendChild(gameMapPanel);
+  const mapCanvas=document.getElementById("gameMapCanvas"),mapCtx=mapCanvas.getContext("2d");
   const W=2200,H=1300;
   const keys=Object.create(null);
   const mouse={x:0,y:0,down:false};
-  let camera={x:0,y:0},paused=false,mapOpen=false,toastText="",toastUntil=0;
+  let camera={x:0,y:0},paused=false,mapOpen=false,menuOpen=false,toastText="",toastUntil=0;
   let selectedVehicle="SUV",vehicleActive=false,selectedVehicleIndex=0,interactCooldown=0,last=performance.now();
   let bridgeDown=false,floodLevel=0,fireHotspots=0;
   // Dynamic emergency-world simulation state.
@@ -574,6 +582,22 @@ window.Last72SelectZone=selectZone;
   function drawParticles(){
     particles.forEach(p=>{p.t+=.016;const q=worldToScreen(p.x,p.y-p.t*80);ctx.globalAlpha=Math.max(0,1-p.t);ctx.fillStyle="#9fffe5";ctx.beginPath();ctx.arc(q.x,q.y,3+p.t*4,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1});for(let i=particles.length-1;i>=0;i--)if(particles[i].t>1)particles.splice(i,1)
   }
+  function setMenu(open){menuOpen=open;paused=open&&!mapOpen;gameMenu.classList.toggle("show",open&&!mapOpen)}
+  function drawTacticalMap(){
+    const w=mapCanvas.width,h=mapCanvas.height,s=Math.min((w-50)/W,(h-50)/H),ox=(w-W*s)/2,oy=(h-H*s)/2;
+    mapCtx.fillStyle="#061016";mapCtx.fillRect(0,0,w,h);
+    roads.forEach(r=>{mapCtx.fillStyle="#263d45";mapCtx.fillRect(ox+r.x*s,oy+r.y*s,Math.max(3,r.w*s),Math.max(3,r.h*s))});
+    zones.forEach(z=>{mapCtx.fillStyle=z.key===state.selectedZone?"rgba(159,255,229,.24)":"rgba(50,78,85,.38)";mapCtx.strokeStyle=z.key===state.selectedZone?"#9fffe5":"#49646c";mapCtx.strokeRect(ox+z.x*s,oy+z.y*s,z.w*s,z.h*s);mapCtx.fillStyle="#dbe8ea";mapCtx.font="10px Arial";mapCtx.fillText(z.name,ox+(z.x+8)*s,oy+(z.y+17)*s)});
+    buildings.forEach(b=>{mapCtx.fillStyle=b.inaccessible?"#9b454b":"#3d555c";mapCtx.fillRect(ox+b.x*s,oy+b.y*s,b.w*s,b.h*s)});
+    vehicles.forEach((v,i)=>{mapCtx.fillStyle=i===selectedVehicleIndex?"#ffc857":"#61c8ff";mapCtx.fillRect(ox+v.x*s-4,oy+v.y*s-3,8,6)});
+    cityAI.helpCalls.forEach(h=>{mapCtx.fillStyle="#ffc857";mapCtx.beginPath();mapCtx.arc(ox+h.x*s,oy+h.y*s,5,0,Math.PI*2);mapCtx.fill()});
+    cityAI.fires.forEach(f=>{mapCtx.fillStyle="#ff725c";mapCtx.beginPath();mapCtx.arc(ox+f.x*s,oy+f.y*s,5,0,Math.PI*2);mapCtx.fill()});
+    const m=mission();if(m){mapCtx.fillStyle="#9fffe5";mapCtx.beginPath();mapCtx.arc(ox+m.x*s,oy+m.y*s,7,0,Math.PI*2);mapCtx.fill()}
+    mapCtx.fillStyle="#fff";mapCtx.beginPath();mapCtx.arc(ox+player.x*s,oy+player.y*s,7,0,Math.PI*2);mapCtx.fill();
+    mapCtx.strokeStyle="#9fffe5";mapCtx.strokeRect(ox,oy,W*s,H*s);
+  }
+  function openMap(){mapOpen=true;menuOpen=false;paused=true;gameMenu.classList.remove("show");gameMapPanel.classList.add("show");drawTacticalMap()}
+  function closeMap(){mapOpen=false;paused=false;gameMapPanel.classList.remove("show");say("RETURNED TO FIELD")}
   function drawUI(){
     const m=mission();ctx.fillStyle="rgba(2,8,12,.72)";ctx.fillRect(18,18,370,100);ctx.fillStyle="#9fffe5";ctx.font="bold 11px Arial";ctx.fillText("LAST 72 HOURS  //  FIELD COMMAND",32,39);ctx.fillStyle="#fff";ctx.font="bold 21px Arial";ctx.fillText(m?m.title:"LANDFALL PREPARATION",32,66);ctx.fillStyle="#91aab2";ctx.font="11px Arial";ctx.fillText(m?m.text:"All primary field objectives completed.",32,88);ctx.fillText("WASD MOVE   E INTERACT   V VEHICLE   1-5 COMMANDS   ESC PAUSE",32,106);
     ctx.fillStyle="rgba(2,8,12,.72)";ctx.fillRect(canvas.width-310,18,292,86);ctx.fillStyle="#9aaeb4";ctx.font="10px Arial";ctx.fillText("TIME TO LANDFALL",canvas.width-292,37);ctx.fillStyle="#fff";ctx.font="bold 24px Arial";ctx.fillText(String(Math.max(0,state.hours)).padStart(2,"0")+":00",canvas.width-292,65);ctx.font="11px Arial";ctx.fillText("SAFETY "+Math.round(state.safety)+"%     BUDGET ₹"+state.budget,canvas.width-292,87);
@@ -593,8 +617,8 @@ window.Last72SelectZone=selectZone;
   addEventListener("keydown",e=>{
     if(["input","textarea","select"].includes(document.activeElement?.tagName?.toLowerCase()))return;
     const k=e.key.toLowerCase();
-    if(k==="escape"){if(mapOpen){mapOpen=false;say("RETURNED TO FIELD")}else{paused=!paused;say(paused?"GAME PAUSED":"RESUMED")}e.preventDefault();return}
-    if(k==="m"){mapOpen=!mapOpen;paused=false;say(mapOpen?"TACTICAL MAP • CLICK A ZONE TO TARGET":"RETURNED TO FIELD");e.preventDefault();return}
+    if(k==="escape"){if(mapOpen)closeMap();else setMenu(!menuOpen);e.preventDefault();return}
+    if(k==="m"){if(mapOpen)closeMap();else openMap();e.preventDefault();return}
     if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){keys[k]=true;e.preventDefault()}
     if(k==="e"&&!mapOpen){interact();e.preventDefault()}
     if(k==="v"&&!mapOpen){if(vehicleActive){vehicleActive=false;say("EXIT VEHICLE • ON FOOT")}else{const v=vehicles.findIndex(v=>Math.hypot(v.x-player.x,v.y-player.y)<90);if(v>=0){selectedVehicleIndex=v;selectedVehicle=vehicles[v].type;vehicleActive=true;say("ENTERED • "+vehicles[v].name)}else say("NO EMERGENCY VEHICLE NEARBY")}e.preventDefault()}
@@ -603,9 +627,16 @@ window.Last72SelectZone=selectZone;
   addEventListener("keyup",e=>{keys[e.key.toLowerCase()]=false});
   canvas.addEventListener("click",e=>{
     const r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top;
-    if(mapOpen){const wx=camera.x+mouse.x,wy=camera.y+mouse.y;const z=zoneAt(wx,wy);if(z){window.Last72SelectZone(z.key);mapOpen=false;say("TARGET LOCKED • "+z.name)}}
+    
   });
   canvas.addEventListener("mousemove",e=>{const r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top});
+  document.getElementById("closeGameMap").addEventListener("click",closeMap);
+  gameMenu.querySelector('[data-gm="resume"]').addEventListener("click",()=>setMenu(false));
+  gameMenu.querySelector('[data-gm="map"]').addEventListener("click",openMap);
+  gameMenu.querySelector('[data-gm="controls"]').addEventListener("click",()=>{const n=document.getElementById("gmControls");n.hidden=!n.hidden});
+  gameMenu.querySelector('[data-gm="restart"]').addEventListener("click",()=>{setMenu(false);document.getElementById("restart")?.click()});
+  mapCanvas.addEventListener("click",e=>{const r=mapCanvas.getBoundingClientRect(),w=mapCanvas.width,h=mapCanvas.height,s=Math.min((w-50)/W,(h-50)/H),ox=(w-W*s)/2,oy=(h-H*s)/2,z=zoneAt((e.clientX-r.left-ox)/s,(e.clientY-r.top-oy)/s);if(z){window.Last72SelectZone(z.key);drawTacticalMap();say("TARGET LOCKED • "+z.name)}});
+  setInterval(()=>{if(mapOpen)drawTacticalMap()},500);
   say("FIELD COMMAND ONLINE • Reach the glowing mission marker.");
   requestAnimationFrame(frame);
 })();
