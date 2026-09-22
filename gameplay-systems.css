@@ -1,0 +1,23 @@
+/* LAST 72 HOURS — GAMEPLAY SYSTEMS HUD */
+.systems-hud{position:fixed;inset:0;z-index:60;pointer-events:none;font-family:Arial,sans-serif;color:#e9fbf7}
+.systems-top{position:absolute;left:18px;right:18px;top:16px;display:flex;gap:8px;align-items:center;pointer-events:none}
+.sys-brand{margin-right:auto;padding:9px 13px;background:rgba(3,12,16,.78);border:1px solid rgba(159,255,229,.25);backdrop-filter:blur(8px);text-transform:uppercase}
+.sys-brand b{display:block;font-size:11px;letter-spacing:2px;color:#9fffe5}.sys-brand span{font-size:8px;color:#6e858d;letter-spacing:1px}
+.sys-stat{min-width:82px;padding:7px 10px;background:rgba(3,12,16,.72);border:1px solid rgba(159,255,229,.18);text-align:center}
+.sys-stat small{display:block;font-size:8px;color:#71868d;letter-spacing:1px}.sys-stat b{font-size:12px;color:#fff}
+.systems-left,.systems-right{position:absolute;top:92px;width:260px;display:grid;gap:8px}
+.systems-left{left:18px}.systems-right{right:18px}
+.sys-panel{background:rgba(3,12,16,.76);border:1px solid rgba(159,255,229,.18);box-shadow:0 8px 30px rgba(0,0,0,.2);backdrop-filter:blur(8px);padding:11px}
+.sys-panel.compact{padding:9px}
+.sys-title{font-size:9px;letter-spacing:1.7px;color:#9fffe5;margin-bottom:8px;display:flex;justify-content:space-between}
+.sys-event{padding:8px 7px;margin-top:5px;border-left:2px solid #ffbd59;background:rgba(255,189,89,.06)}
+.sys-event b{display:block;font-size:10px}.sys-event span{display:block;color:#9bb0b5;font-size:8px;line-height:1.35;margin:3px 0}.sys-event em{font-style:normal;color:#ffbd59;font-size:8px}
+.sys-clear{font-size:8px;color:#62777e;padding:5px 0}
+.sys-controls{font-size:8px;line-height:2.2;color:#81989e}.sys-controls kbd{font:700 8px Arial;color:#061014;background:#9fffe5;padding:2px 5px;margin:0 2px}
+.meter{display:grid;grid-template-columns:48px 1fr 32px;gap:6px;align-items:center;margin:7px 0;font-size:8px;color:#849aa0}.meter i{height:4px;background:#9fffe5;display:block;transform-origin:left}.meter b{font-size:8px;color:#d8e8e8;text-align:right}
+#sysInventory{display:grid;grid-template-columns:1fr 1fr;gap:5px}.sys-inventory span{font-size:8px}
+#sysInventory span{font-size:8px;color:#789096;padding:5px;background:rgba(255,255,255,.025)}#sysInventory b{float:right;color:#fff}
+.sys-toast{position:absolute;left:50%;bottom:34px;transform:translate(-50%,15px);opacity:0;padding:11px 18px;background:rgba(0,25,22,.92);border:1px solid rgba(159,255,229,.45);font-size:10px;letter-spacing:.7px;transition:.2s}
+.sys-toast.show{opacity:1;transform:translate(-50%,0)}.sys-toast.good{border-color:#9fffe5;color:#dffff7}
+.sys-save{position:absolute;right:18px;bottom:14px;font-size:8px;color:#647b82;letter-spacing:1px}
+@media(max-width:850px){.systems-left,.systems-right{width:210px;top:80px}.systems-right{display:none}.sys-stat{min-width:62px}.sys-brand{display:none}.systems-top{justify-content:flex-end}.systems-left{left:10px}.systems-left{top:76px}.sys-panel{padding:8px}.sys-controls{font-size:7px}.sys-toast{bottom:22px;font-size:8px}}
