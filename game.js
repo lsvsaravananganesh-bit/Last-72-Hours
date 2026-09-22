@@ -722,6 +722,7 @@ function executeFacilityService(f){
   addEventListener("keydown",e=>{
     if(["input","textarea","select"].includes(document.activeElement?.tagName?.toLowerCase()))return;
     const k=e.key.toLowerCase();
+    if(window.Last72Facility && typeof window.Last72Facility.isOpen==="function" && window.Last72Facility.isOpen())return;
     if(k==="escape"){if(helpOpen){setHelp(false)}else if(mapOpen)closeMap();else setMenu(!menuOpen);e.preventDefault();return}
     if(k==="?"){setHelp(!helpOpen);e.preventDefault();return}
     if(k==="m"&&!helpOpen){if(mapOpen)closeMap();else openMap();e.preventDefault();return}
