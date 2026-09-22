@@ -229,7 +229,7 @@
   addEventListener("keydown",e=>{
     const k=e.key.toLowerCase();keys[k]=true;
     if(["r","f","g","h","b","q"].includes(k) && !e.repeat && !["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName)){resolve(k);e.preventDefault();}
-    if(k==="v"&&!e.repeat){cycleVehicle();}
+    if(k==="v"&&!e.repeat&&!document.getElementById("actualGameCanvas")){cycleVehicle();}
     if(k==="x"&&!e.repeat){fieldAction("rescue");e.preventDefault();}
     if(k==="z"&&!e.repeat){fieldAction("convoy");e.preventDefault();}
     if(k==="t"&&!e.repeat){fieldAction("drone");e.preventDefault();}
