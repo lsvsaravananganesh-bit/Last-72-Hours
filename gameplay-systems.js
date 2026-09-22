@@ -171,7 +171,7 @@
   }
 
   function tick(dt){
-    if(!window.state)return;
+    if(typeof state==="undefined")return;
     S.tick+=dt;S.eventClock-=dt;S.autosaveClock+=dt;
     if(S.eventClock<=0&&!state.ended){
       S.eventClock=8+Math.random()*7;
