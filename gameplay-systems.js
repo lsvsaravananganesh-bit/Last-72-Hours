@@ -45,6 +45,7 @@
     const n=document.createElement(tag); if(cls)n.className=cls; if(text)n.textContent=text; return n;
   }
   function mount(){
+    if(document.querySelector(".systems-hud")) return document.querySelector(".systems-hud");
     const layer=el("div","systems-hud");
     layer.innerHTML=
       '<div class="systems-top">'+
