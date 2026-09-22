@@ -41,7 +41,7 @@
 
   const overlay=document.createElement("canvas");
   overlay.className="dynamic-world-overlay";
-  overlay.width=W;overlay.height=H;
+  overlay.width=innerWidth;overlay.height=innerHeight;
   document.querySelector(".actual-game-world")?.appendChild(overlay);
   const ctx=overlay.getContext("2d");
 
@@ -182,7 +182,10 @@
   }
 
   function draw(){
-    ctx.clearRect(0,0,W,H);
+    const cam=window.Last72Camera||{x:0,y:0};
+    if(overlay.width!==innerWidth||overlay.height!==innerHeight){overlay.width=innerWidth;overlay.height=innerHeight;}
+    ctx.clearRect(0,0,overlay.width,overlay.height);
+    ctx.save();ctx.translate(-cam.x,-cam.y);
     buildings.forEach(b=>{
       if(b.blocked){ctx.fillStyle="rgba(255,70,55,.28)";ctx.fillRect(b.x-4,b.y-4,b.w+8,b.h+8);ctx.strokeStyle="#ff594d";ctx.strokeRect(b.x-4,b.y-4,b.w+8,b.h+8)}
     });
@@ -210,6 +213,7 @@
       ctx.strokeStyle="#9fffe5";ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,18+Math.sin(elapsed*4)*4,0,Math.PI*2);ctx.stroke();
       ctx.fillStyle="#9fffe5";ctx.font="bold 11px Arial";ctx.fillText(mission.title,x-28,y-24);
     }
+    ctx.restore();
   }
 
   function interact(){
