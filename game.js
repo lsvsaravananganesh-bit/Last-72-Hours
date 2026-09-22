@@ -12,8 +12,17 @@ const initialZones=JSON.parse(JSON.stringify(zoneData));
 const GAME_MODES={
   standard:{name:"STANDARD",hours:72,budget:100,wind:55,confidence:61,description:"Full strategic campaign with balanced uncertainty and cascading events."},
   rapid:{name:"RAPID RESPONSE",hours:48,budget:82,wind:78,confidence:54,description:"Less time, tighter budget and faster escalation. Prioritise the highest-risk operations."},
-  extreme:{name:"EXTREME STORM",hours:36,budget:70,wind:105,confidence:47,description:"Severe starting conditions, stronger uncertainty and harsher cascading consequences."}
+  extreme:{name:"EXTREME STORM",hours:36,budget:70,wind:105,confidence:47,description:"Severe starting conditions, stronger uncertainty and harsher cascading consequences."},
+  scenario:{name:"SCENARIO MODE",hours:48,budget:88,wind:82,confidence:52,description:"Choose a focused emergency challenge and adapt your strategy around it."}
 };
+const SCENARIOS={
+  flood:{name:"FLOODED CITY",description:"Riverside and villages face severe rainfall. Roads and shelters are under pressure.",safety:-5,rain:80,congestion:12},
+  hospital:{name:"HOSPITAL CRISIS",description:"Medical systems start stressed. Hospital reinforcement becomes critical.",safety:-4,rain:20,congestion:8},
+  blackout:{name:"COMMUNICATION BLACKOUT",description:"Public warnings are unreliable. Trust and misinformation become the main threat.",safety:-6,rain:10,congestion:18},
+  evacuation:{name:"MASS EVACUATION",description:"A huge vulnerable population must move quickly with limited vehicles.",safety:-3,rain:35,congestion:22},
+  infrastructure:{name:"INFRASTRUCTURE FAILURE",description:"Routes, power and essential services begin the mission already damaged.",safety:-7,rain:45,congestion:20}
+};
+let selectedScenario="flood";
 let selectedMode="standard";
 const state={mode:"standard",initialHours:72,hours:72,budget:100,safety:82,distance:720,confidence:61,wind:55,turn:1,ended:false,peopleProtected:0,evacuated:0,shelterCapacity:0,vehicles:18,teams:12,food:100,medical:100,communications:100,forecastShift:0,landfallZone:"coastal",history:[],routesOpen:true,hospitalReady:52,trust:62,panic:18,congestion:20,power:86,misinformation:12,shelterStress:0,chainReactions:0,landfallProb:58,rainfall:110,stormRadius:180,trackShift:0,modelA:54,modelB:31,modelC:15,scenario:"Baseline Cyclone",scenarioLevel:1,forecastPressure:1008,objectives:{evacuate:false,shelter:false,warning:false,medical:false,roads:false},commandLog:[]};
 const $=id=>document.getElementById(id),feed=$("feed");
@@ -82,16 +91,27 @@ function playTone(type="click"){
 function showImpact(title,details){const box=$("impactPanel");if(box)box.innerHTML="<b>"+title+"</b><span>"+details+"</span>"}
 function applyMode(mode){
   const cfg=GAME_MODES[mode]||GAME_MODES.standard;
-  selectedMode=mode;
-  state.mode=mode; state.initialHours=cfg.hours; state.hours=cfg.hours;
+  selectedMode=mode; state.mode=mode; state.initialHours=cfg.hours; state.hours=cfg.hours;
   state.budget=cfg.budget; state.wind=cfg.wind; state.confidence=cfg.confidence;
-  state.distance=mode==="standard"?720:mode==="rapid"?560:430;
-  state.safety=mode==="extreme"?74:mode==="rapid"?78:82;
+  state.distance=mode==="standard"?720:mode==="rapid"?560:mode==="extreme"?430:560;
+  state.safety=mode==="extreme"?74:mode==="rapid"?78:mode==="scenario"?77:82;
   document.querySelectorAll(".mode-option").forEach(b=>b.classList.toggle("active",b.dataset.mode===mode));
   const d=$("modeDescription"); if(d)d.textContent=cfg.description;
-  const clock=$("clock"); if(clock)clock.textContent=cfg.hours+":00";
-  render();
+  const picker=$("scenarioPicker"); if(picker)picker.hidden=mode!=="scenario";
+  if(mode==="scenario")applyScenario(selectedScenario,false);
+  const clock=$("clock"); if(clock)clock.textContent=cfg.hours+":00"; render();
 }
+function applyScenario(id,rerender=true){
+  const sc=SCENARIOS[id]||SCENARIOS.flood; selectedScenario=id; state.scenario=sc.name; state.scenarioLevel=2;
+  state.safety=Math.max(0,state.safety+sc.safety); state.rainfall+=sc.rain; state.congestion=Math.min(100,state.congestion+sc.congestion);
+  if(id==="hospital"){state.medical=65;state.hospitalReady=38}
+  if(id==="blackout"){state.communications=48;state.misinformation=34;state.trust=48}
+  if(id==="evacuation"){state.vehicles=14}
+  if(id==="infrastructure"){state.routesOpen=false;state.power=62;state.hospitalReady=42}
+  const d=$("modeDescription"); if(d)d.textContent=sc.description; if(rerender)render();
+}
+document.querySelectorAll(".mode-option").forEach(b=>b.addEventListener("click",()=>applyMode(b.dataset.mode)));
+$("scenarioSelect")?.addEventListener("change",e=>{selectedScenario=e.target.value;applyMode("scenario")});
 document.querySelectorAll(".mode-option").forEach(b=>b.addEventListener("click",()=>applyMode(b.dataset.mode)));
 
 function startMission(){ applyMode(selectedMode); $("briefingOverlay").classList.add("hidden"); playTone("success"); addFeed("MISSION • "+GAME_MODES[selectedMode].name+" mode activated."); render(); }
