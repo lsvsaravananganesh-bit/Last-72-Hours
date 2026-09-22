@@ -73,7 +73,7 @@
   function act(s){
     if(active && ["hospital","police","fire","eoc","shelter"].includes(active.type)) showDialogue(active.type);
     if(s[2]&&window.Last72FacilityService) window.Last72FacilityService(s[2]);
-    const msg=s[2]?'SERVICE COMPLETE • '+s[0]:'INSPECTION COMPLETE • '+s[0];
+    const msg=s[2]?'SERVICE COMPLETE • '+s[0]:'INSPECTION COMPLETE • '+s[0];\n    if(active && s[2]){ try{ localStorage.setItem("l72:lastFacilityAction",JSON.stringify({facility:active.type,action:s[0],time:Date.now()})); }catch(e){} }
     result.textContent=msg;result.classList.add("flash");
     if(s[2]==="hospital"||s[2]==="police"||s[2]==="fire") cinematic(s[0],["Facility crew mobilized.","Emergency network updated.","Return to the city when ready."]);setTimeout(()=>result.classList.remove("flash"),350);
     status.textContent=s[2]?"SERVICE COMPLETE":"INSPECTION";
