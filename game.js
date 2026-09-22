@@ -592,8 +592,8 @@ window.Last72SelectZone=selectZone;
   addEventListener("keydown",e=>{
     if(["input","textarea","select"].includes(document.activeElement?.tagName?.toLowerCase()))return;
     const k=e.key.toLowerCase();
-    if(k==="escape"){if(mapOpen){mapOpen=false}else paused=!paused;e.preventDefault();return}
-    if(k==="m"){mapOpen=!mapOpen;paused=false;e.preventDefault();return}
+    if(k==="escape"){if(mapOpen){mapOpen=false;say("RETURNED TO FIELD")}else{paused=!paused;say(paused?"GAME PAUSED":"RESUMED")}e.preventDefault();return}
+    if(k==="m"){mapOpen=!mapOpen;paused=false;say(mapOpen?"TACTICAL MAP • CLICK A ZONE TO TARGET":"RETURNED TO FIELD");e.preventDefault();return}
     if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){keys[k]=true;e.preventDefault()}
     if(k==="e"&&!mapOpen){interact();e.preventDefault()}
     if(k==="v"&&!mapOpen){if(vehicleActive){vehicleActive=false;say("EXIT VEHICLE • ON FOOT")}else{const v=vehicles.findIndex(v=>Math.hypot(v.x-player.x,v.y-player.y)<90);if(v>=0){selectedVehicleIndex=v;selectedVehicle=vehicles[v].type;vehicleActive=true;say("ENTERED • "+vehicles[v].name)}else say("NO EMERGENCY VEHICLE NEARBY")}e.preventDefault()}
