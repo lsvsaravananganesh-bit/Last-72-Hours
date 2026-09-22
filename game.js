@@ -90,7 +90,7 @@ function renderAchievements(){
  box.innerHTML=achievements.map(a=>'<div class="achievement '+(unlocked[a.id]?"unlocked":"")+'"><span>'+a.icon+'</span><div><b>'+a.name+'</b><br>'+a.desc+'</div></div>').join("");
 }
 function playTone(type="click"){
- try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=new C(),o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.value=type==="success"?660:type==="alert"?180:420;g.gain.value=.035;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+(type==="alert"?0.16:0.08));}catch(e){}
+ try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=window.__L72_AUDIO||(window.__L72_AUDIO=new C());if(c.state==="suspended")c.resume();const o=c.createOscillator(),g=c.createGain();o.type=type==="alert"?"sawtooth":"sine";o.frequency.value=type==="success"?660:type==="alert"?180:420;g.gain.value=.028;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+(type==="alert"?0.16:0.08));}catch(e){}
 }
 function showImpact(title,details){const box=$("impactPanel");if(box)box.innerHTML="<b>"+title+"</b><span>"+details+"</span>"}
 function applyMode(mode){
@@ -262,7 +262,7 @@ window.Last72SelectZone=selectZone;
   // Dynamic emergency-world simulation state.
   const cityAI={
     fires:[],helpCalls:[],rescueTargets:[],crews:[],blockedBuildings:new Set(),
-    eventClock:5,missionClock:0,missionHistory:[],lastDynamicMission:"",
+    eventClock:16,missionClock:0,missionHistory:[],lastDynamicMission:"",
     nextId:1
   };
   const crewTypes=[
@@ -317,7 +317,7 @@ window.Last72SelectZone=selectZone;
   addEventListener("resize",resize);resize();
   function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
   function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
-  function say(t){toastText=t;toastUntil=performance.now()+2200}
+  function say(t){toastText=t;toastUntil=performance.now()+2200;try{window.dispatchEvent(new CustomEvent("l72:feedback",{detail:String(t)}))}catch(e){}}
   function zoneAt(x,y){return zones.find(z=>x>z.x&&x<z.x+z.w&&y>z.y&&y<z.y+z.h)}
   function mission(){return missions[missionIndex]||null}
   function dynamicTargetAt(x,y,r=55){
@@ -481,7 +481,7 @@ window.Last72SelectZone=selectZone;
     score+=m.reward;missionIndex++;
     particles.push({x:player.x,y:player.y,t:0});
     say("MISSION COMPLETE • +"+m.reward+" COMMAND XP");
-    if(missionIndex>=missions.length){say("CAMPAIGN OBJECTIVE COMPLETE • LANDFALL PREPARED");}
+    if(missionIndex>=missions.length){say("CAMPAIGN OBJECTIVE COMPLETE • LANDFALL PREPARED");}else{const next=missions[missionIndex];setTimeout(()=>{if(!state.ended&&next)say("NEXT OBJECTIVE • "+next.title+" • "+next.zone.toUpperCase())},650);}
   }
   function interact(){
     if(interactCooldown>0)return;
@@ -589,6 +589,7 @@ window.Last72SelectZone=selectZone;
     drawRoads();drawFlood();drawBuildings();drawZones();drawTraffic();drawVehicles();drawNPCs();drawEmergencyWorld();drawMission();drawStorm();drawPlayer();drawParticles();drawUI();
     requestAnimationFrame(frame);
   }
+  window.Last72Game={getMission:()=>mission(),getMissionIndex:()=>missionIndex,getScore:()=>score,getPlayer:()=>({...player}),getCamera:()=>({...camera}),isPaused:()=>paused,isMapOpen:()=>mapOpen};
   addEventListener("keydown",e=>{
     if(["input","textarea","select"].includes(document.activeElement?.tagName?.toLowerCase()))return;
     const k=e.key.toLowerCase();
