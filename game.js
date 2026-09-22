@@ -99,6 +99,8 @@ function applyMode(mode){
   state.budget=cfg.budget; state.wind=cfg.wind; state.confidence=cfg.confidence;
   state.distance=mode==="standard"?720:mode==="rapid"?560:mode==="extreme"?430:560;
   state.safety=mode==="extreme"?74:mode==="rapid"?78:mode==="scenario"?77:82;
+  state.rainfall=110; state.congestion=20; state.medical=100; state.hospitalReady=52; state.communications=100;
+  state.misinformation=12; state.trust=62; state.panic=18; state.power=86; state.shelterStress=0; state.routesOpen=true; state.vehicles=18;
   document.querySelectorAll(".mode-option").forEach(b=>b.classList.toggle("active",b.dataset.mode===mode));
   const d=$("modeDescription"); if(d)d.textContent=cfg.description;
   const picker=$("scenarioPicker"); if(picker)picker.hidden=mode!=="scenario";
@@ -116,7 +118,6 @@ function applyScenario(id,rerender=true){
 }
 document.querySelectorAll(".mode-option").forEach(b=>b.addEventListener("click",()=>applyMode(b.dataset.mode)));
 $("scenarioSelect")?.addEventListener("change",e=>{selectedScenario=e.target.value;applyMode("scenario")});
-document.querySelectorAll(".mode-option").forEach(b=>b.addEventListener("click",()=>applyMode(b.dataset.mode)));
 
 function startMission(){ applyMode(selectedMode); $("briefingOverlay").classList.add("hidden"); $("cinematicIntro")?.classList.add("hidden"); $("missionModeStrip")?.classList.add("active"); const label=$("activeModeLabel"); if(label)label.textContent=GAME_MODES[selectedMode].name; playTone("success"); addFeed("MISSION • "+GAME_MODES[selectedMode].name+" mode activated."); render(); }
 function runQuickDemo(){ if(state.ended)return;if(state.ended)return;const sequence=["warning","shelter","evacuate","hospital","roads"];let i=0;const tick=()=>{if(i<sequence.length&&!state.ended){takeAction(sequence[i],"DEMO");i++;setTimeout(tick,550)}};tick();addFeed("JUDGE DEMO • Running the recommended 5-command sequence.");} 
@@ -226,6 +227,8 @@ window.Last72TakeAction=takeAction;
 window.Last72SelectZone=selectZone;
 
 (function initFieldOperations(){
+  // Legacy DOM field layer is disabled; the canvas engine below is the single active game loop.
+  return;
   const world=document.getElementById("fieldWorld");
   const player=document.getElementById("playerUnit");
   const npcLayer=document.getElementById("npcLayer");
