@@ -258,7 +258,7 @@ window.Last72SelectZone=selectZone;
   gameMenu.innerHTML='<div class="gm-card"><div class="gm-kicker">SATELLITE COMMAND // SURYA NAGAR</div><h2>LAST 72 HOURS</h2><p>FIELD COMMAND PAUSED</p><div class="gm-actions"><button data-gm="resume">RESUME GAME</button><button data-gm="map">TACTICAL MAP</button><button data-gm="controls">CONTROLS</button><button data-gm="restart">RESTART MISSION</button></div><div id="gmControls" class="gm-controls" hidden><b>CONTROLS</b><span>W A S D / ARROWS — MOVE</span><span>E — INTERACT / RESCUE</span><span>V — VEHICLE</span><span>M — MAP</span><span>1–5 — COMMANDS</span><span>ESC — MENU</span></div></div>';
   map.appendChild(gameMenu);
   const gameMapPanel=document.createElement("div");gameMapPanel.id="gameMapPanel";gameMapPanel.className="game-map-panel";
-  gameMapPanel.innerHTML='<div class="gmp-head"><div><b>TACTICAL CITY MAP</b><span>LIVE OPERATIONAL VIEW</span></div><button id="closeGameMap">BACK TO FIELD</button></div><canvas id="gameMapCanvas"></canvas><div class="gmp-legend"><b>LEGEND</b><span>COMMANDER</span><span>MISSION</span><span>VEHICLES</span><span>HELP / FIRE</span></div>';
+  gameMapPanel.innerHTML='<div class="gmp-head"><div><b>TACTICAL CITY MAP</b><span>LIVE OPERATIONAL VIEW • SURYA NAGAR</span></div><div class="gmp-head-actions"><span id="gmpTime">72:00</span><button id="closeGameMap">BACK TO FIELD</button></div></div><div class="gmp-body"><canvas id="gameMapCanvas"></canvas><aside class="gmp-info"><div class="gmp-info-title">OPERATIONAL INTELLIGENCE</div><div class="gmp-stat"><span>ACTIVE ZONE</span><b id="gmpZone">COASTAL WARD</b></div><div class="gmp-stat"><span>RISK</span><b id="gmpRisk">CRITICAL</b></div><div class="gmp-stat"><span>MISSION</span><b id="gmpMission">FIRST WARNING</b></div><div class="gmp-stat"><span>CYCLONE</span><b id="gmpStorm">720 KM</b></div><div class="gmp-stat"><span>ROUTES</span><b id="gmpRoutes">OPEN</b></div><div class="gmp-divider"></div><div class="gmp-mini-title">FACILITIES</div><div class="gmp-facilities"><span>● SHELTERS</span><span>● HOSPITALS</span><span>● EMERGENCY UNITS</span></div><div class="gmp-help">Click a zone to lock your next field operation. M or ESC returns to the field.</div></aside></div><div class="gmp-legend"><b>LEGEND</b><span>◆ COMMANDER</span><span>◆ MISSION</span><span>■ VEHICLE</span><span>● HELP / FIRE</span><span>□ ZONE</span></div>';
   map.appendChild(gameMapPanel);
   const mapCanvas=document.getElementById("gameMapCanvas"),mapCtx=mapCanvas.getContext("2d");
   const W=2200,H=1300;
@@ -586,15 +586,24 @@ window.Last72SelectZone=selectZone;
   function drawTacticalMap(){
     const w=mapCanvas.width,h=mapCanvas.height,s=Math.min((w-50)/W,(h-50)/H),ox=(w-W*s)/2,oy=(h-H*s)/2;
     mapCtx.fillStyle="#061016";mapCtx.fillRect(0,0,w,h);
-    roads.forEach(r=>{mapCtx.fillStyle="#263d45";mapCtx.fillRect(ox+r.x*s,oy+r.y*s,Math.max(3,r.w*s),Math.max(3,r.h*s))});
-    zones.forEach(z=>{mapCtx.fillStyle=z.key===state.selectedZone?"rgba(159,255,229,.24)":"rgba(50,78,85,.38)";mapCtx.strokeStyle=z.key===state.selectedZone?"#9fffe5":"#49646c";mapCtx.strokeRect(ox+z.x*s,oy+z.y*s,z.w*s,z.h*s);mapCtx.fillStyle="#dbe8ea";mapCtx.font="10px Arial";mapCtx.fillText(z.name,ox+(z.x+8)*s,oy+(z.y+17)*s)});
-    buildings.forEach(b=>{mapCtx.fillStyle=b.inaccessible?"#9b454b":"#3d555c";mapCtx.fillRect(ox+b.x*s,oy+b.y*s,b.w*s,b.h*s)});
+    mapCtx.strokeStyle="rgba(105,155,165,.08)";mapCtx.lineWidth=1;
+    for(let x=0;x<w;x+=40){mapCtx.beginPath();mapCtx.moveTo(x,0);mapCtx.lineTo(x,h);mapCtx.stroke()}
+    for(let y=0;y<h;y+=40){mapCtx.beginPath();mapCtx.moveTo(0,y);mapCtx.lineTo(w,y);mapCtx.stroke()}
+    roads.forEach(r=>{mapCtx.fillStyle=bridgeDown&&r.x===1180?"#5b2d35":"#263d45";mapCtx.fillRect(ox+r.x*s,oy+r.y*s,Math.max(3,r.w*s),Math.max(3,r.h*s))});
+    const progress=1-(state.hours/Math.max(1,state.initialHours)),stormX=1850-progress*620,stormY=930-progress*300;
+    mapCtx.setLineDash([7,8]);mapCtx.strokeStyle="rgba(255,200,87,.45)";mapCtx.lineWidth=2;mapCtx.beginPath();mapCtx.moveTo(1850*s+ox,930*s+oy);mapCtx.lineTo(1230*s+ox,630*s+oy);mapCtx.stroke();mapCtx.setLineDash([]);
+    mapCtx.fillStyle="rgba(255,200,87,.12)";mapCtx.beginPath();mapCtx.arc(ox+stormX*s,oy+stormY*s,Math.max(18,90*s),0,Math.PI*2);mapCtx.fill();
+    mapCtx.strokeStyle="#ffc857";mapCtx.beginPath();mapCtx.arc(ox+stormX*s,oy+stormY*s,Math.max(12,55*s),0,Math.PI*2);mapCtx.stroke();
+    zones.forEach(z=>{mapCtx.fillStyle=z.key===state.selectedZone?"rgba(159,255,229,.28)":"rgba(50,78,85,.38)";mapCtx.strokeStyle=z.key===state.selectedZone?"#9fffe5":"#49646c";mapCtx.lineWidth=z.key===state.selectedZone?2:1;mapCtx.fillRect(ox+z.x*s,oy+z.y*s,z.w*s,z.h*s);mapCtx.strokeRect(ox+z.x*s,oy+z.y*s,z.w*s,z.h*s);mapCtx.fillStyle="#dbe8ea";mapCtx.font="10px Arial";mapCtx.fillText(z.name,ox+(z.x+8)*s,oy+(z.y+17)*s)});
+    buildings.forEach(b=>{mapCtx.fillStyle=b.inaccessible?"#9b454b":"#3d555c";mapCtx.fillRect(ox+b.x*s,oy+b.y*s,Math.max(2,b.w*s),Math.max(2,b.h*s))});
+    [{x:1270,y:610,label:"H",c:"#ff9ca8"},{x:1540,y:330,label:"H",c:"#ff9ca8"},{x:1280,y:805,label:"S",c:"#72e6c4"},{x:1710,y:884,label:"S",c:"#72e6c4"},{x:575,y:559,label:"S",c:"#72e6c4"}].forEach(p=>{mapCtx.fillStyle=p.c;mapCtx.beginPath();mapCtx.arc(ox+p.x*s,oy+p.y*s,7,0,Math.PI*2);mapCtx.fill();mapCtx.fillStyle="#061016";mapCtx.font="bold 8px Arial";mapCtx.fillText(p.label,ox+p.x*s-3,oy+p.y*s+3)});
     vehicles.forEach((v,i)=>{mapCtx.fillStyle=i===selectedVehicleIndex?"#ffc857":"#61c8ff";mapCtx.fillRect(ox+v.x*s-4,oy+v.y*s-3,8,6)});
     cityAI.helpCalls.forEach(h=>{mapCtx.fillStyle="#ffc857";mapCtx.beginPath();mapCtx.arc(ox+h.x*s,oy+h.y*s,5,0,Math.PI*2);mapCtx.fill()});
     cityAI.fires.forEach(f=>{mapCtx.fillStyle="#ff725c";mapCtx.beginPath();mapCtx.arc(ox+f.x*s,oy+f.y*s,5,0,Math.PI*2);mapCtx.fill()});
-    const m=mission();if(m){mapCtx.fillStyle="#9fffe5";mapCtx.beginPath();mapCtx.arc(ox+m.x*s,oy+m.y*s,7,0,Math.PI*2);mapCtx.fill()}
-    mapCtx.fillStyle="#fff";mapCtx.beginPath();mapCtx.arc(ox+player.x*s,oy+player.y*s,7,0,Math.PI*2);mapCtx.fill();
-    mapCtx.strokeStyle="#9fffe5";mapCtx.strokeRect(ox,oy,W*s,H*s);
+    const m=mission();if(m){mapCtx.fillStyle="#9fffe5";mapCtx.beginPath();mapCtx.arc(ox+m.x*s,oy+m.y*s,7,0,Math.PI*2);mapCtx.fill();mapCtx.fillStyle="#dff";mapCtx.font="bold 9px Arial";mapCtx.fillText(m.title,ox+m.x*s+10,oy+m.y*s+3)}
+    mapCtx.fillStyle="#fff";mapCtx.beginPath();mapCtx.arc(ox+player.x*s,oy+player.y*s,7,0,Math.PI*2);mapCtx.fill();mapCtx.strokeStyle="#9fffe5";mapCtx.strokeRect(ox,oy,W*s,H*s);
+    const z=zoneData[state.selectedZone]||zoneData.coastal;
+    $("gmpTime").textContent=String(Math.max(0,state.hours)).padStart(2,"0")+":00";$("gmpZone").textContent=z.name.toUpperCase();$("gmpRisk").textContent=z.risk;$("gmpMission").textContent=m?m.title:"LANDFALL PREPARATION";$("gmpStorm").textContent=Math.max(0,state.distance)+" KM";$("gmpRoutes").textContent=state.routesOpen?"OPEN":"BLOCKED";
   }
   function openMap(){mapOpen=true;menuOpen=false;paused=true;gameMenu.classList.remove("show");gameMapPanel.classList.add("show");drawTacticalMap()}
   function closeMap(){mapOpen=false;paused=false;gameMapPanel.classList.remove("show");say("RETURNED TO FIELD")}
