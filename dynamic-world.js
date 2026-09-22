@@ -225,9 +225,6 @@
     const c=calls[0];if(c){c.civilian.state="RESCUED";calls.shift();state.peopleProtected=(state.peopleProtected||0)+1;state.evacuated=(state.evacuated||0)+1;state.safety=Math.min(100,state.safety+2);notify("CIVILIAN RESCUED • +1 SAFETY")}
   }
 
-  addEventListener("keydown",e=>{
-    if(e.key.toLowerCase()==="e"&&!e.repeat&&!["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName))interact();
-  });
   function loop(t){
     const dt=Math.min(.05,(t-(loop.last||t))/1000);loop.last=t;elapsed+=dt;
     if(typeof state!=="undefined"&&!state.ended){
