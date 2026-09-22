@@ -359,6 +359,17 @@ window.Last72SelectZone=selectZone;
   let camera={x:0,y:0},paused=false,mapOpen=false,toastText="",toastUntil=0;
   let selectedVehicle="SUV",vehicleActive=false,selectedVehicleIndex=0,interactCooldown=0,last=performance.now();
   let bridgeDown=false,floodLevel=0,fireHotspots=0;
+  // Dynamic emergency-world simulation state.
+  const cityAI={
+    fires:[],helpCalls:[],rescueTargets:[],crews:[],blockedBuildings:new Set(),
+    eventClock:5,missionClock:0,missionHistory:[],lastDynamicMission:"",
+    nextId:1
+  };
+  const crewTypes=[
+    {kind:"POLICE",color:"#72a8ff",speed:145},
+    {kind:"FIRE",color:"#ff725c",speed:125},
+    {kind:"AMBULANCE",color:"#f4f4f4",speed:155}
+  ];
   const trafficVehicles=Array.from({length:16},(_,i)=>({x:80+i*135,y:i%2?548:928,dir:i%2?1:-1,speed:55+(i%4)*18,type:["CAR","VAN","BUS","TRUCK"][i%4],color:["#d7e2e4","#6fc7ff","#ffc857","#ff7b8a"][i%4]}));
   let missionIndex=0,score=0;
   const player={x:430,y:940,r:15,angle:-.4,speed:210,health:100,stamina:100};
@@ -409,6 +420,118 @@ window.Last72SelectZone=selectZone;
   function say(t){toastText=t;toastUntil=performance.now()+2200}
   function zoneAt(x,y){return zones.find(z=>x>z.x&&x<z.x+z.w&&y>z.y&&y<z.y+z.h)}
   function mission(){return missions[missionIndex]||null}
+  function dynamicTargetAt(x,y,r=55){
+    return cityAI.rescueTargets.find(t=>!t.rescued&&Math.hypot(t.x-x,t.y-y)<r);
+  }
+  function spawnHelpCall(){
+    const n=npcs.find(n=>!n.rescued&&n.kind!=="FIRE CREW");
+    if(!n)return;
+    const id=cityAI.nextId++;
+    const call={id,x:n.x,y:n.y,kind:n.kind,age:0,priority:Math.random()>0.65?"CRITICAL":"HIGH",status:"WAITING"};
+    cityAI.helpCalls.push(call);
+    cityAI.rescueTargets.push(call);
+    say("DISTRESS CALL • "+call.kind+" REQUESTING HELP");
+  }
+  function spawnFire(){
+    const b=buildings[Math.floor(Math.random()*buildings.length)];
+    if(!b)return;
+    const id=cityAI.nextId++;
+    cityAI.fires.push({id,x:b.x+b.w/2,y:b.y+b.h/2,age:0,spread:0,building:b});
+    cityAI.blockedBuildings.add(id);
+    fireHotspots=cityAI.fires.length;
+    say("FIRE REPORTED • BUILDING ACCESS RESTRICTED");
+  }
+  function spawnCrew(type,x,y,target){
+    const t=crewTypes.find(v=>v.kind===type)||crewTypes[0];
+    cityAI.crews.push({id:cityAI.nextId++,kind:t.kind,color:t.color,speed:t.speed,x,y,target,mode:"RESPONDING"});
+  }
+  function chooseDynamicMission(){
+    const candidates=[];
+    if(cityAI.helpCalls.length)candidates.push({title:"DISTRESS CALL",text:"Reach a civilian requesting help and rescue them.",kind:"rescue"});
+    if(cityAI.fires.length)candidates.push({title:"FIRE RESPONSE",text:"Reach the burning building before the fire spreads.",kind:"fire"});
+    if(state.hospitalReady<55)candidates.push({title:"MEDICAL EMERGENCY",text:"Escort an ambulance to the medical district.",kind:"medical"});
+    if(bridgeDown||!state.routesOpen)candidates.push({title:"BROKEN CORRIDOR",text:"Reach the blocked corridor and restore access.",kind:"roads"});
+    if(!candidates.length)return null;
+    return candidates[Math.floor(Math.random()*candidates.length)];
+  }
+  function dynamicMissionStep(){
+    const m=chooseDynamicMission();
+    if(!m)return;
+    cityAI.lastDynamicMission=m.title;
+    cityAI.missionHistory.push(m.title);
+    cityAI.missionHistory=cityAI.missionHistory.slice(-6);
+    if(m.kind==="rescue"){const t=cityAI.helpCalls[0];if(t){t.status="ACTIVE";say("MISSION CHANGED • "+m.title)}}
+    else if(m.kind==="fire")say("MISSION CHANGED • "+m.title);
+    else say("MISSION CHANGED • "+m.title);
+  }
+  function nearestActiveTarget(){
+    return cityAI.rescueTargets.find(t=>!t.rescued&&t.status!=="RESCUED")||null;
+  }
+  function updateEmergencyAI(dt){
+    cityAI.eventClock-=dt; cityAI.missionClock+=dt;
+    const pressure=(100-state.confidence)*.5+state.panic*.35+state.congestion*.2+floodLevel*.18;
+    if(cityAI.eventClock<=0&&!state.ended){
+      cityAI.eventClock=7+Math.random()*9;
+      if(Math.random()<Math.min(.72,.20+pressure/150))spawnHelpCall();
+      if(Math.random()<Math.min(.48,.10+state.wind/420))spawnFire();
+      if(Math.random()<.45)dynamicMissionStep();
+    }
+    // Fire spreads to nearby buildings and raises danger.
+    for(const f of cityAI.fires){
+      f.age+=dt; f.spread+=dt;
+      if(f.spread>6 && cityAI.fires.length<6){
+        f.spread=0;
+        const b=buildings.find(b=>Math.hypot(b.x+b.w/2-f.x,b.y+b.h/2-f.y)<230&&!cityAI.blockedBuildings.has(b.x));
+        if(b){
+          const id=cityAI.nextId++; cityAI.fires.push({id,x:b.x+b.w/2,y:b.y+b.h/2,age:0,spread:0,building:b});
+          cityAI.blockedBuildings.add(id); fireHotspots=cityAI.fires.length;
+          state.safety=Math.max(0,state.safety-.5);
+        }
+      }
+      if(f.age>28){cityAI.fires.splice(cityAI.fires.indexOf(f),1);fireHotspots=cityAI.fires.length;}
+    }
+    // Dispatch the right emergency crew automatically.
+    if(cityAI.fires.length && !cityAI.crews.some(c=>c.kind==="FIRE"&&c.mode!=="DONE")){
+      const f=cityAI.fires[0];spawnCrew("FIRE",f.x+90,f.y+90,f);
+    }
+    if(cityAI.helpCalls.length && !cityAI.crews.some(c=>c.kind==="AMBULANCE"&&c.mode!=="DONE")){
+      const h=cityAI.helpCalls[0];spawnCrew("AMBULANCE",h.x-90,h.y-90,h);
+    }
+    if(state.panic>55 && !cityAI.crews.some(c=>c.kind==="POLICE"&&c.mode!=="DONE")){
+      const h=cityAI.helpCalls[0]||{x:player.x+120,y:player.y};spawnCrew("POLICE",h.x+120,h.y,h);
+    }
+    for(const c of cityAI.crews){
+      if(c.mode==="DONE"||!c.target)continue;
+      const dx=c.target.x-c.x,dy=c.target.y-c.y,d=Math.hypot(dx,dy)||1;
+      if(d<18){
+        c.mode="ON SCENE";
+        if(c.kind==="FIRE"&&c.target.age>2){c.target.age=Math.max(0,c.target.age-12);state.safety=Math.min(100,state.safety+1);}
+        if(c.kind==="AMBULANCE"&&c.target.status==="WAITING"){c.target.status="RESPONDED";state.safety=Math.min(100,state.safety+1);}
+        if(c.kind==="POLICE")state.panic=Math.max(0,state.panic-3);
+      }else{c.x+=dx/d*c.speed*dt;c.y+=dy/d*c.speed*dt;}
+    }
+    // Buildings become inaccessible when fire/flood reaches them.
+    if(floodLevel>62)bridgeDown=true;
+    for(const b of buildings){
+      if(cityAI.fires.some(f=>Math.hypot(f.x-(b.x+b.w/2),f.y-(b.y+b.h/2))<18)) b.inaccessible=true;
+      if(b.inaccessible&&Math.random()<dt*.02)b.inaccessible=false;
+    }
+    // Dynamic rescue targets follow civilians who requested help.
+    cityAI.helpCalls.forEach(h=>{h.age+=dt;if(h.age>35&&!h.rescued){h.status="CRITICAL";state.safety=Math.max(0,state.safety-.6);}});
+    if(cityAI.helpCalls.length>8)cityAI.helpCalls.splice(0,cityAI.helpCalls.length-8);
+    fireHotspots=cityAI.fires.length;
+  }
+  function rescueDynamicTarget(){
+    const t=dynamicTargetAt(player.x,player.y,65);
+    if(!t){say("NO RESCUE TARGET IN RANGE");return false;}
+    t.rescued=true;t.status="RESCUED";
+    state.peopleProtected=(state.peopleProtected||0)+1;
+    state.evacuated=(state.evacuated||0)+1;
+    state.safety=Math.min(100,state.safety+2);
+    score+=75;
+    say("RESCUE COMPLETE • CIVILIAN SAFE • +75 XP");
+    return true;
+  }
   function collideBuilding(x,y,r){
     for(const b of buildings){
       if(x> b.x-r && x<b.x+b.w+r && y>b.y-r && y<b.y+b.h+r)return true;
@@ -464,6 +587,7 @@ window.Last72SelectZone=selectZone;
     if(interactCooldown>0)return;
     interactCooldown=.5;
     const m=mission();
+    if(dynamicTargetAt(player.x,player.y,70)){rescueDynamicTarget();return}
     if(m&&dist(player,m)<100){completeMission();return}
     const nearV=vehicles.find(v=>dist(player,v)<75);
     if(nearV){selectedVehicleIndex=vehicles.indexOf(nearV);selectedVehicle=nearV.type;vehicleActive=true;player.x=nearV.x;player.y=nearV.y;say("VEHICLE ENTERED • "+nearV.name);return}
@@ -506,6 +630,41 @@ window.Last72SelectZone=selectZone;
   function drawVehicles(){
     vehicles.forEach((v,idx)=>{const p=worldToScreen(v.x,v.y);ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle=v.color;ctx.fillRect(-v.w/2,-v.h/2,v.w,v.h);ctx.fillStyle="#071016";ctx.fillRect(-v.w*.28,-v.h*.25,v.w*.56,v.h*.32);ctx.restore();ctx.fillStyle="#dbecee";ctx.font="9px Arial";ctx.fillText(v.type,p.x-v.w/2,p.y+v.h/2+12);if(idx===selectedVehicleIndex && vehicleActive){ctx.strokeStyle="#9fffe5";ctx.strokeRect(p.x-v.w/2-5,p.y-v.h/2-5,v.w+10,v.h+10)}});
   }
+  function drawEmergencyWorld(){
+    // Fires, emergency crews, distress markers and inaccessible buildings.
+    for(const b of buildings){
+      if(!b.inaccessible)continue;
+      const p=worldToScreen(b.x,b.y);
+      ctx.fillStyle="rgba(255,55,55,.22)";ctx.fillRect(p.x,p.y,b.w,b.h);
+      ctx.strokeStyle="#ff6978";ctx.lineWidth=2;ctx.strokeRect(p.x,p.y,b.w,b.h);
+      ctx.fillStyle="#ff6978";ctx.font="bold 9px Arial";ctx.fillText("INACCESSIBLE",p.x+6,p.y+14);
+    }
+    for(const f of cityAI.fires){
+      const p=worldToScreen(f.x,f.y),pulse=10+Math.sin(performance.now()/90)*4;
+      ctx.fillStyle="rgba(255,80,30,.18)";ctx.beginPath();ctx.arc(p.x,p.y,30+pulse,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#ff5a36";ctx.beginPath();ctx.arc(p.x,p.y,10+pulse*.35,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#ffd166";ctx.font="bold 9px Arial";ctx.fillText("FIRE",p.x-10,p.y-18);
+    }
+    for(const c of cityAI.crews){
+      if(c.mode==="DONE")continue;
+      const p=worldToScreen(c.x,c.y);ctx.fillStyle=c.color;ctx.fillRect(p.x-9,p.y-7,18,14);
+      ctx.fillStyle="#07131a";ctx.font="bold 7px Arial";ctx.fillText(c.kind==="AMBULANCE"?"A":c.kind==="FIRE"?"F":"P",p.x-3,p.y+3);
+      ctx.strokeStyle=c.color;ctx.beginPath();ctx.arc(p.x,p.y,15,0,Math.PI*2);ctx.stroke();
+    }
+    for(const h of cityAI.rescueTargets){
+      if(h.rescued)continue;
+      const p=worldToScreen(h.x,h.y),pulse=12+Math.sin(performance.now()/140)*4;
+      ctx.strokeStyle=h.status==="CRITICAL"?"#ff5367":"#9fffe5";ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(p.x,p.y,pulse,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle=h.status==="CRITICAL"?"#ff5367":"#9fffe5";ctx.font="bold 9px Arial";ctx.fillText("HELP",p.x-12,p.y-17);
+    }
+    if(cityAI.lastDynamicMission){
+      ctx.fillStyle="rgba(2,8,12,.72)";ctx.fillRect(18,canvas.height-76,390,46);
+      ctx.fillStyle="#ffcf6e";ctx.font="bold 9px Arial";ctx.fillText("DYNAMIC MISSION",30,canvas.height-57);
+      ctx.fillStyle="#fff";ctx.font="bold 13px Arial";ctx.fillText(cityAI.lastDynamicMission,30,canvas.height-39);
+      ctx.fillStyle="#91aab2";ctx.font="9px Arial";ctx.fillText("WORLD STATE CHANGED • RESPOND NOW",190,canvas.height-39);
+    }
+  }
   function drawMission(){
     const m=mission();if(!m)return;const p=worldToScreen(m.x,m.y),pulse=8+Math.sin(performance.now()/180)*4;ctx.strokeStyle="#9fffe5";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,pulse+12,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#9fffe5";ctx.beginPath();ctx.moveTo(p.x,p.y-10);ctx.lineTo(p.x-7,p.y+5);ctx.lineTo(p.x+7,p.y+5);ctx.closePath();ctx.fill();ctx.fillStyle="#eafff9";ctx.font="bold 11px Arial";ctx.fillText(m.title,p.x+18,p.y+4);ctx.font="9px Arial";ctx.fillStyle="#8ca6ad";ctx.fillText("E  INTERACT",p.x+18,p.y+17)}
   function drawPlayer(){
@@ -524,10 +683,10 @@ window.Last72SelectZone=selectZone;
   }
   function frame(now){
     const dt=Math.min(.033,(now-last)/1000);last=now;interactCooldown=Math.max(0,interactCooldown-dt);
-    if(!paused&&!mapOpen){movePlayer(dt);updateNPC(dt);updateTraffic(dt);floodLevel=Math.min(100,floodLevel+dt*(state.rainfall>220?.7:.18));if(floodLevel>62)bridgeDown=true;}
+    if(!paused&&!mapOpen){movePlayer(dt);updateNPC(dt);updateTraffic(dt);updateEmergencyAI(dt);floodLevel=Math.min(100,floodLevel+dt*(state.rainfall>220?.7:.18));if(floodLevel>62)bridgeDown=true;}
     camera.x=clamp(player.x-canvas.width/2,0,Math.max(0,W-canvas.width));camera.y=clamp(player.y-canvas.height/2,0,Math.max(0,H-canvas.height));
     ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#07131a";ctx.fillRect(0,0,canvas.width,canvas.height);
-    drawRoads();drawFlood();drawBuildings();drawZones();drawTraffic();drawVehicles();drawNPCs();drawMission();drawStorm();drawPlayer();drawParticles();drawUI();
+    drawRoads();drawFlood();drawBuildings();drawZones();drawTraffic();drawVehicles();drawNPCs();drawEmergencyWorld();drawMission();drawStorm();drawPlayer();drawParticles();drawUI();
     requestAnimationFrame(frame);
   }
   addEventListener("keydown",e=>{
