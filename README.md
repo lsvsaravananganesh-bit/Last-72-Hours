@@ -6,7 +6,7 @@
 
 ## What you actually play
 
-This is a **top-down emergency-response game**, not a dashboard.
+This is a **top-down emergency-response game**, with a clean game-first interface. Strategic information appears only when needed through the tactical map, pause menu and help overlay.
 
 - Move through the city with **WASD / Arrow Keys**
 - **E** — interact, rescue, or complete the current mission
@@ -19,6 +19,21 @@ This is a **top-down emergency-response game**, not a dashboard.
 - **X / Z / T / P / C** — rescue, convoy, drone, pump, broadcast actions
 
 The world changes while you play: civilians request help, traffic builds, fires spread, emergency crews respond, buildings can become inaccessible, floods affect corridors, and new missions are selected from the consequences of earlier decisions.
+
+## Required playable features
+
+The competition build is organized around a small set of visible, playable systems:
+
+- **Explore:** move through Surya Nagar with WASD / Arrow Keys.
+- **Mission:** follow one active objective at a time and complete it with E.
+- **Vehicles:** enter emergency vehicles with V and use them to reach incidents.
+- **Living city:** civilians, traffic, fires, distress calls and emergency crews react during play.
+- **Decisions:** evacuation, shelter, warning, hospital and road operations change the city state.
+- **Consequences:** panic, trust, congestion, infrastructure and weather conditions can create new problems.
+- **Tactical map:** M opens the full city map for navigation and zone selection.
+- **Help:** ? opens an in-game guide without leaving the game.
+- **Pause/menu:** ESC provides resume, map, help, controls and restart.
+- **Landfall/report:** the run ends with a visible outcome and final report.
 
 ## Core game loop
 
