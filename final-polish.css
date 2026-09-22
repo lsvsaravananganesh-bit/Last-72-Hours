@@ -46,3 +46,18 @@ body.final-opening .systems-right{opacity:.72}
  .final-mission-rail{top:57px;width:calc(100vw - 20px)}.final-demo-tip{top:119px;font-size:7px}
  .final-mission-rail{padding:6px}.fmr-list{gap:2px}
 }
+
+
+/* FINAL IN-GAME MENU + TACTICAL MAP */
+.game-menu,.game-map-panel{position:absolute;inset:0;z-index:200;display:none;align-items:center;justify-content:center;background:rgba(2,7,11,.78);backdrop-filter:blur(14px);font-family:Arial,sans-serif;color:#eaf9f6}
+.game-menu.show,.game-map-panel.show{display:flex}
+.gm-card{width:min(460px,88vw);padding:30px;border:1px solid rgba(159,255,229,.28);border-radius:14px;background:rgba(5,16,21,.96);box-shadow:0 24px 80px rgba(0,0,0,.5);text-align:center}
+.gm-kicker{font-size:8px;letter-spacing:2px;color:#7f999f}.gm-card h2{font-size:34px;letter-spacing:4px;margin:12px 0 5px}.gm-card p{font-size:9px;color:#8fa7ad;letter-spacing:1.5px}
+.gm-actions{display:grid;gap:8px;margin-top:24px}.gm-actions button,.gmp-head button{border:1px solid rgba(159,255,229,.28);background:#0c2529;color:#dff;padding:12px;border-radius:7px;font-weight:700;letter-spacing:1px;cursor:pointer}
+.gm-actions button:hover,.gmp-head button:hover{border-color:#9fffe5;background:#12373a}.gm-controls{display:grid;gap:5px;margin-top:18px;padding:12px;background:rgba(255,255,255,.03);text-align:left;font-size:9px;color:#9eb3b8}.gm-controls b{color:#9fffe5;letter-spacing:1px;margin-bottom:4px}
+.game-map-panel{flex-direction:column;padding:28px;gap:12px}
+.gmp-head{width:min(1100px,92vw);display:flex;justify-content:space-between;align-items:center}.gmp-head b{display:block;font-size:18px;letter-spacing:2px}.gmp-head span{display:block;color:#71888e;font-size:8px;letter-spacing:1.5px;margin-top:4px}
+#gameMapCanvas{width:min(1100px,92vw);height:auto;border:1px solid rgba(159,255,229,.25);background:#061016;border-radius:8px;image-rendering:auto}
+.gmp-legend{width:min(1100px,92vw);display:flex;gap:18px;flex-wrap:wrap;color:#789198;font-size:8px;letter-spacing:1px}
+.gmp-legend b{color:#9fffe5}
+@media(max-width:700px){.gm-card{padding:22px}.gm-card h2{font-size:26px}.game-map-panel{padding:15px}.gmp-head b{font-size:13px}.gmp-legend{gap:8px;font-size:7px}}
