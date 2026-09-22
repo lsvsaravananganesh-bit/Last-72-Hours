@@ -279,7 +279,7 @@ window.Last72SelectZone=selectZone;
     {kind:"AMBULANCE",color:"#f4f4f4",speed:155}
   ];
   const trafficVehicles=Array.from({length:16},(_,i)=>({x:80+i*135,y:i%2?548:928,dir:i%2?1:-1,speed:55+(i%4)*18,type:["CAR","VAN","BUS","TRUCK"][i%4],color:["#d7e2e4","#6fc7ff","#ffc857","#ff7b8a"][i%4]}));
-  let missionIndex=0,score=0;
+  let missionIndex=0,missionStep=0,score=0;
   const player={x:430,y:940,r:15,angle:-.4,speed:210,health:100,stamina:100};
   const vehicles=[
     {name:"RESCUE SUV",type:"SUV",x:480,y:885,w:54,h:30,color:"#8fffe2",speed:310,capacity:6,fuel:100,health:100},
@@ -289,11 +289,16 @@ window.Last72SelectZone=selectZone;
     {name:"HELICOPTER",type:"HELI",x:1650,y:270,w:64,h:30,color:"#b99cff",speed:390,capacity:8,fuel:100,health:100}
   ];
   const missions=[
-    {title:"FIRST WARNING",zone:"coastal",x:300,y:300,action:"warning",text:"Reach Coastal Ward and broadcast the first warning.",reward:100},
-    {title:"EVACUATION RUN",zone:"harbour",x:760,y:270,action:"evacuate",text:"Reach Harbour and evacuate vulnerable families.",reward:180},
-    {title:"BRIDGE COLLAPSE",zone:"riverside",x:380,y:780,action:"roads",text:"Secure Riverside and reopen the emergency corridor.",reward:160},
-    {title:"HOSPITAL CRISIS",zone:"oldtown",x:1110,y:470,action:"hospital",text:"Reinforce Old Town hospital before the surge.",reward:180},
-    {title:"SHELTER OVERLOAD",zone:"villages",x:1040,y:1060,action:"shelter",text:"Expand shelter capacity in Outer Villages.",reward:160}
+    {title:"FIRST WARNING",zone:"coastal",x:300,y:300,action:"warning",text:"Restore the warning chain and alert Coastal Ward.",reward:100,
+      procedure:[["REACH THE WARNING POST",300,300],["INSPECT THE ALERT SYSTEM",330,325],["BROADCAST THE WARNING",300,300]]},
+    {title:"EVACUATION RUN",zone:"harbour",x:760,y:270,action:"evacuate",text:"Collect vulnerable families and move them to safety.",reward:180,
+      procedure:[["REACH THE HARBOUR",760,270],["DEPLOY THE EVACUATION BUS",650,1010],["CONFIRM EVACUATION",760,270]]},
+    {title:"BRIDGE COLLAPSE",zone:"riverside",x:380,y:780,action:"roads",text:"Inspect the failed crossing and reopen the corridor.",reward:160,
+      procedure:[["REACH RIVERSIDE",380,780],["INSPECT THE BRIDGE",430,805],["REOPEN EMERGENCY ROUTE",380,780]]},
+    {title:"HOSPITAL CRISIS",zone:"oldtown",x:1110,y:470,action:"hospital",text:"Prepare the hospital for a sudden patient surge.",reward:180,
+      procedure:[["REACH OLD TOWN HOSPITAL",1110,470],["CHECK MEDICAL CAPACITY",1150,500],["AUTHORIZE EMERGENCY INTAKE",1110,470]]},
+    {title:"SHELTER OVERLOAD",zone:"villages",x:1040,y:1060,action:"shelter",text:"Expand shelter capacity and stabilize displaced families.",reward:160,
+      procedure:[["REACH OUTER VILLAGES",1040,1060],["INSPECT SHELTER CAPACITY",1090,1090],["OPEN EMERGENCY SHELTER",1040,1060]]}
   ];
   const zones=[
     {key:"coastal",name:"COASTAL WARD",x:260,y:260,w:300,h:190,risk:"CRITICAL"},
@@ -328,6 +333,12 @@ window.Last72SelectZone=selectZone;
   function say(t){toastText=t;toastUntil=performance.now()+2200;try{window.dispatchEvent(new CustomEvent("l72:feedback",{detail:String(t)}))}catch(e){}}
   function zoneAt(x,y){return zones.find(z=>x>z.x&&x<z.x+z.w&&y>z.y&&y<z.y+z.h)}
   function mission(){return missions[missionIndex]||null}
+  function currentMissionStep(){
+    const m=mission(); return m&&m.procedure ? (m.procedure[missionStep]||m.procedure[m.procedure.length-1]) : null;
+  }
+  function missionTarget(){
+    const s=currentMissionStep(); return s?{x:s[1],y:s[2]}:mission();
+  }
   function dynamicTargetAt(x,y,r=55){
     return cityAI.rescueTargets.find(t=>!t.rescued&&Math.hypot(t.x-x,t.y-y)<r);
   }
@@ -483,13 +494,23 @@ window.Last72SelectZone=selectZone;
   }
   function completeMission(){
     const m=mission();if(!m)return;
-    if(dist(player,m)>95){say("GET CLOSER • "+m.title);return}
+    const target=missionTarget();
+    if(dist(player,target)>95){say("GET CLOSER • "+(currentMissionStep()?.[0]||m.title));return}
+    const step=currentMissionStep();
+    if(step){say("PROCEDURE COMPLETE • "+step[0]);}
+    if(missionStep < (m.procedure?.length||1)-1){
+      missionStep++;
+      const next=currentMissionStep();
+      particles.push({x:player.x,y:player.y,t:0});
+      setTimeout(()=>{if(!state.ended&&next)say("NEXT PROCEDURE • "+next[0])},220);
+      return;
+    }
     window.Last72SelectZone(m.zone);
     window.Last72TakeAction(m.action,"FIELD MISSION");
-    score+=m.reward;missionIndex++;
+    score+=m.reward;missionIndex++;missionStep=0;
     particles.push({x:player.x,y:player.y,t:0});
     say("MISSION COMPLETE • +"+m.reward+" COMMAND XP");
-    if(missionIndex>=missions.length){say("CAMPAIGN OBJECTIVE COMPLETE • LANDFALL PREPARED");}else{const next=missions[missionIndex];setTimeout(()=>{if(!state.ended&&next)say("NEXT OBJECTIVE • "+next.title+" • "+next.zone.toUpperCase())},650);}
+    if(missionIndex>=missions.length){say("CAMPAIGN OBJECTIVE COMPLETE • LANDFALL PREPARED");}else{const next=missions[missionIndex];setTimeout(()=>{if(!state.ended&&next)say("NEXT MISSION • "+next.title+" • "+next.zone.toUpperCase())},650);}
   }
   function interact(){
     if(interactCooldown>0)return;
@@ -574,7 +595,7 @@ window.Last72SelectZone=selectZone;
     }
   }
   function drawMission(){
-    const m=mission();if(!m)return;const p=worldToScreen(m.x,m.y),pulse=8+Math.sin(performance.now()/180)*4;ctx.strokeStyle="#9fffe5";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,pulse+12,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#9fffe5";ctx.beginPath();ctx.moveTo(p.x,p.y-10);ctx.lineTo(p.x-7,p.y+5);ctx.lineTo(p.x+7,p.y+5);ctx.closePath();ctx.fill();ctx.fillStyle="#eafff9";ctx.font="bold 11px Arial";ctx.fillText(m.title,p.x+18,p.y+4);ctx.font="9px Arial";ctx.fillStyle="#8ca6ad";ctx.fillText("E  INTERACT",p.x+18,p.y+17)}
+    const m=mission();if(!m)return;const target=missionTarget(),p=worldToScreen(target.x,target.y),pulse=8+Math.sin(performance.now()/180)*4;ctx.strokeStyle="#9fffe5";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,pulse+12,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#9fffe5";ctx.beginPath();ctx.moveTo(p.x,p.y-10);ctx.lineTo(p.x-7,p.y+5);ctx.lineTo(p.x+7,p.y+5);ctx.closePath();ctx.fill();ctx.fillStyle="#eafff9";ctx.font="bold 11px Arial";ctx.fillText(m.title,p.x+18,p.y+4);ctx.font="9px Arial";ctx.fillStyle="#8ca6ad";ctx.fillText("E  INTERACT",p.x+18,p.y+17)}
   function drawPlayer(){
     const p=worldToScreen(player.x,player.y);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(player.angle);ctx.fillStyle=vehicleActive?"#9fffe5":"#f3fbfa";ctx.beginPath();ctx.moveTo(18,0);ctx.lineTo(-12,-10);ctx.lineTo(-8,0);ctx.lineTo(-12,10);ctx.closePath();ctx.fill();ctx.restore();ctx.strokeStyle="#9fffe5";ctx.beginPath();ctx.arc(p.x,p.y,26+Math.sin(performance.now()/120)*3,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#dff";ctx.font="bold 10px Arial";ctx.fillText(vehicleActive?selectedVehicle:"COMMANDER",p.x-34,p.y+40)}
   function drawStorm(){
@@ -635,7 +656,7 @@ window.Last72SelectZone=selectZone;
     drawRoads();drawFlood();drawBuildings();drawZones();drawTraffic();drawVehicles();drawNPCs();drawEmergencyWorld();drawMission();drawStorm();drawPlayer();drawParticles();drawUI();
     requestAnimationFrame(frame);
   }
-  window.Last72Game={getMission:()=>mission(),getMissionIndex:()=>missionIndex,getScore:()=>score,getPlayer:()=>({...player}),getCamera:()=>({...camera}),isPaused:()=>paused,isMapOpen:()=>mapOpen};
+  window.Last72Game={getMission:()=>mission(),getMissionIndex:()=>missionIndex,getMissionStep:()=>missionStep,getMissionProcedure:()=>currentMissionStep(),getScore:()=>score,getPlayer:()=>({...player}),getCamera:()=>({...camera}),isPaused:()=>paused,isMapOpen:()=>mapOpen};
   addEventListener("keydown",e=>{
     if(["input","textarea","select"].includes(document.activeElement?.tagName?.toLowerCase()))return;
     const k=e.key.toLowerCase();
