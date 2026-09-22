@@ -583,6 +583,16 @@ window.Last72SelectZone=selectZone;
     particles.forEach(p=>{p.t+=.016;const q=worldToScreen(p.x,p.y-p.t*80);ctx.globalAlpha=Math.max(0,1-p.t);ctx.fillStyle="#9fffe5";ctx.beginPath();ctx.arc(q.x,q.y,3+p.t*4,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1});for(let i=particles.length-1;i>=0;i--)if(particles[i].t>1)particles.splice(i,1)
   }
   function setMenu(open){menuOpen=open;paused=open&&!mapOpen;gameMenu.classList.toggle("show",open&&!mapOpen)}
+  let helpOpen=false;
+  const helpPanel=document.createElement("div");
+  helpPanel.id="gameHelp";
+  helpPanel.innerHTML='<div class="help-card"><div class="help-kicker">FIELD GUIDE // QUICK HELP</div><h2>HOW TO PLAY</h2><p>Complete the current mission, move through the city, and respond to emergencies before the storm reaches landfall.</p><div class="help-grid"><div><b>MOVE</b><span>W A S D / ARROW KEYS</span></div><div><b>INTERACT</b><span>E</span></div><div><b>VEHICLE</b><span>V near an emergency vehicle</span></div><div><b>QUICK ACTIONS</b><span>1–5</span></div><div><b>MAP</b><span>M</span></div><div><b>MENU</b><span>ESC</span></div></div><div class="help-tip"><strong>TIP</strong> Follow the glowing mission marker. Reach the target zone and press E when the mission prompt appears.</div><button id="closeGameHelp">CONTINUE GAME</button></div>';
+  document.body.appendChild(helpPanel);
+  function setHelp(open){
+    helpOpen=open; paused=open;
+    helpPanel.classList.toggle("show",open);
+    if(open){say("FIELD GUIDE OPEN • GAME PAUSED");}
+  }
   function drawTacticalMap(){
     const w=mapCanvas.width,h=mapCanvas.height,s=Math.min((w-50)/W,(h-50)/H),ox=(w-W*s)/2,oy=(h-H*s)/2;
     mapCtx.fillStyle="#061016";mapCtx.fillRect(0,0,w,h);
@@ -626,8 +636,9 @@ window.Last72SelectZone=selectZone;
   addEventListener("keydown",e=>{
     if(["input","textarea","select"].includes(document.activeElement?.tagName?.toLowerCase()))return;
     const k=e.key.toLowerCase();
-    if(k==="escape"){if(mapOpen)closeMap();else setMenu(!menuOpen);e.preventDefault();return}
-    if(k==="m"){if(mapOpen)closeMap();else openMap();e.preventDefault();return}
+    if(k==="escape"){if(helpOpen){setHelp(false)}else if(mapOpen)closeMap();else setMenu(!menuOpen);e.preventDefault();return}
+    if(k==="?"){setHelp(!helpOpen);e.preventDefault();return}
+    if(k==="m"&&!helpOpen){if(mapOpen)closeMap();else openMap();e.preventDefault();return}
     if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){keys[k]=true;e.preventDefault()}
     if(k==="e"&&!mapOpen){interact();e.preventDefault()}
     if(k==="v"&&!mapOpen){if(vehicleActive){vehicleActive=false;say("EXIT VEHICLE • ON FOOT")}else{const v=vehicles.findIndex(v=>Math.hypot(v.x-player.x,v.y-player.y)<90);if(v>=0){selectedVehicleIndex=v;selectedVehicle=vehicles[v].type;vehicleActive=true;say("ENTERED • "+vehicles[v].name)}else say("NO EMERGENCY VEHICLE NEARBY")}e.preventDefault()}
@@ -640,6 +651,8 @@ window.Last72SelectZone=selectZone;
   });
   canvas.addEventListener("mousemove",e=>{const r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top});
   document.getElementById("closeGameMap").addEventListener("click",closeMap);
+  document.getElementById("closeGameHelp").addEventListener("click",()=>setHelp(false));
+  document.getElementById("gameHelpButton")?.addEventListener("click",()=>setHelp(!helpOpen));
   gameMenu.querySelector('[data-gm="resume"]').addEventListener("click",()=>setMenu(false));
   gameMenu.querySelector('[data-gm="map"]').addEventListener("click",openMap);
   gameMenu.querySelector('[data-gm="controls"]').addEventListener("click",()=>{const n=document.getElementById("gmControls");n.hidden=!n.hidden});
