@@ -544,6 +544,17 @@ window.Last72SelectZone=selectZone;
     say("NO INTERACTION IN RANGE");
   }
   function useFacility(f){
+    if(window.Last72Facility && typeof window.Last72Facility.enter==="function"){
+      window.Last72Facility.enter(f);
+      return;
+    }
+    executeFacilityService(f);
+  }
+  window.Last72FacilityService=function(type){
+    const f=facilities.find(x=>x.type===type);
+    if(f) executeFacilityService(f);
+  };
+function executeFacilityService(f){
     switch(f.type){
       case "eoc": say("EOC • MISSION CONTROL ONLINE"); break;
       case "hospital": state.hospitalReady=Math.min(100,(state.hospitalReady||0)+18); state.safety=Math.min(100,state.safety+5); say("HOSPITAL • EMERGENCY INTAKE READY"); break;
@@ -707,7 +718,7 @@ window.Last72SelectZone=selectZone;
     drawRoads();drawFlood();drawBuildings();drawZones();drawFacilities();drawTraffic();drawVehicles();drawNPCs();drawEmergencyWorld();drawMission();drawStorm();drawPlayer();drawParticles();drawUI();
     requestAnimationFrame(frame);
   }
-  window.Last72Game={getMission:()=>mission(),getMissionIndex:()=>missionIndex,getMissionStep:()=>missionStep,getMissionProcedure:()=>currentMissionStep(),getScore:()=>score,getPlayer:()=>({...player}),getCamera:()=>({...camera}),isPaused:()=>paused,isMapOpen:()=>mapOpen};
+  window.Last72Game={getMission:()=>mission(),getMissionIndex:()=>missionIndex,getMissionStep:()=>missionStep,getMissionProcedure:()=>currentMissionStep(),getScore:()=>score,getPlayer:()=>({...player}),getCamera:()=>({...camera}),isPaused:()=>paused,isMapOpen:()=>mapOpen,setPaused:(v)=>{paused=!!v},setPlayerPosition:(x,y)=>{player.x=clamp(x,25,W-25);player.y=clamp(y,25,H-25)},getFacilities:()=>facilities.map(f=>({...f}))};
   addEventListener("keydown",e=>{
     if(["input","textarea","select"].includes(document.activeElement?.tagName?.toLowerCase()))return;
     const k=e.key.toLowerCase();
