@@ -1,0 +1,48 @@
+/* FINAL COMPETITION BUILD POLISH */
+.final-mission-rail{
+  position:fixed;z-index:75;top:70px;left:50%;transform:translateX(-50%);
+  width:min(610px,58vw);padding:8px 10px;border:1px solid rgba(159,255,229,.18);
+  border-radius:10px;background:rgba(2,9,14,.70);backdrop-filter:blur(12px);
+  box-shadow:0 12px 35px rgba(0,0,0,.28);font-family:Arial,sans-serif;pointer-events:none;
+}
+.fmr-head{display:flex;justify-content:space-between;padding:0 4px 6px;color:#69848e;font-size:7px;letter-spacing:1.7px}
+.fmr-head b{color:#9fffe5}
+.fmr-list{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.fmr-item{min-width:0;padding:6px 5px;border:1px solid rgba(255,255,255,.07);border-radius:6px;opacity:.46;transition:.2s;background:rgba(255,255,255,.018)}
+.fmr-item i{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;font-style:normal;font-size:7px;color:#7d949c;border:1px solid #34505a;vertical-align:middle;margin-right:4px}
+.fmr-item span{display:inline-block;vertical-align:middle;max-width:calc(100% - 25px)}
+.fmr-item b,.fmr-item small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fmr-item b{font-size:7px;color:#b9cbd0}.fmr-item small{font-size:6px;color:#657e88;margin-top:2px}
+.fmr-item.active{opacity:1;border-color:rgba(159,255,229,.55);background:rgba(22,72,66,.24);box-shadow:0 0 20px rgba(103,245,208,.08)}
+.fmr-item.active i{background:#9fffe5;color:#06100f;border-color:#9fffe5}
+.fmr-item.done{opacity:.72}.fmr-item.done i{color:#9fffe5;border-color:#9fffe5}
+.final-demo-tip{
+  position:fixed;z-index:74;left:50%;top:154px;transform:translateX(-50%);
+  padding:7px 11px;border:1px solid rgba(255,200,87,.25);border-radius:6px;
+  background:rgba(7,14,19,.68);backdrop-filter:blur(8px);font:8px Arial;color:#c7d6d9;
+  pointer-events:none;transition:.35s;white-space:nowrap
+}
+.final-demo-tip b{color:#ffc857;letter-spacing:1px;margin-right:8px}.final-demo-tip.soft-hide{opacity:0;transform:translate(-50%,-7px)}
+.final-feedback{
+  position:fixed;z-index:100;left:50%;top:34%;transform:translate(-50%,10px) scale(.98);
+  min-width:270px;padding:13px 18px;text-align:center;border:1px solid rgba(159,255,229,.45);
+  border-radius:9px;background:rgba(2,12,15,.91);backdrop-filter:blur(12px);
+  box-shadow:0 15px 50px rgba(0,0,0,.4);font:10px Arial;color:#dff;opacity:0;transition:.22s;pointer-events:none
+}
+.final-feedback.show{opacity:1;transform:translate(-50%,0) scale(1)}
+.final-feedback b,.final-feedback span{display:block}.final-feedback b{font-size:9px;letter-spacing:1.7px;color:#9fffe5}.final-feedback span{margin-top:4px;color:#b9cbd0}
+.final-feedback.alert{border-color:rgba(255,105,120,.5)}.final-feedback.alert b{color:#ff8b98}
+.final-feedback.success{border-color:rgba(159,255,229,.55)}
+.dynamic-ai-hud.urgent{border-color:rgba(255,200,87,.5)}
+/* Keep secondary systems available without competing with the active mission. */
+body:not(.final-has-incidents) .systems-left{opacity:.16;transition:opacity .25s}
+body:not(.final-has-incidents) .systems-left:hover{opacity:1}
+body.final-opening .systems-right{opacity:.72}
+@media(max-width:900px){
+ .final-mission-rail{width:70vw}.fmr-item b{font-size:6px}.fmr-item small{display:none}
+ .final-demo-tip{max-width:80vw;overflow:hidden;text-overflow:ellipsis}
+}
+@media(max-width:760px){
+ .final-mission-rail{top:57px;width:calc(100vw - 20px)}.final-demo-tip{top:119px;font-size:7px}
+ .final-mission-rail{padding:6px}.fmr-list{gap:2px}
+}
