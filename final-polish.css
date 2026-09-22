@@ -88,3 +88,14 @@ body.final-opening .systems-right{opacity:.72}
 
 /* Minimal tactical map */
 .gmp-body{grid-template-columns:1fr!important}.gmp-info{display:none!important}.gmp-legend{opacity:.8}
+
+/* IN-GAME HELP */
+#gameHelp{display:none;position:fixed;inset:0;z-index:120;align-items:center;justify-content:center;background:rgba(2,8,12,.72);backdrop-filter:blur(8px);font-family:Arial,sans-serif;color:#eaf9f6}
+#gameHelp.show{display:flex}
+.help-card{width:min(520px,90vw);padding:28px;border:1px solid rgba(159,255,229,.24);border-radius:16px;background:rgba(5,16,21,.97);box-shadow:0 25px 80px rgba(0,0,0,.5)}
+.help-kicker{font-size:7px;letter-spacing:2px;color:#6f8991}.help-card h2{margin:7px 0 5px;font-size:25px;letter-spacing:1.5px}.help-card>p{margin:0 0 20px;color:#9bb0b5;font-size:9px;line-height:1.5}
+.help-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.help-grid div{padding:10px;border:1px solid rgba(255,255,255,.07);border-radius:8px;background:rgba(255,255,255,.025)}.help-grid b{display:block;color:#9fffe5;font-size:8px;letter-spacing:1px}.help-grid span{display:block;margin-top:4px;color:#b5c5c9;font-size:8px}
+.help-tip{margin:16px 0;padding:11px 12px;border-left:2px solid #9fffe5;background:rgba(159,255,229,.045);color:#8fa7ad;font-size:8px;line-height:1.5}.help-tip strong{color:#9fffe5;margin-right:6px}
+#closeGameHelp{width:100%;padding:12px;border:1px solid rgba(159,255,229,.25);border-radius:8px;background:rgba(159,255,229,.07);color:#dffef7;font:700 9px Arial;letter-spacing:1px;cursor:pointer}#closeGameHelp:hover{background:rgba(159,255,229,.13)}
+#gameHelpButton{width:28px;height:28px;border:1px solid rgba(159,255,229,.25);border-radius:50%;background:rgba(159,255,229,.06);color:#9fffe5;font:bold 13px Arial;cursor:pointer;margin:6px}
+#gameHelpButton:hover{background:rgba(159,255,229,.14)}
