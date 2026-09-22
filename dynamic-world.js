@@ -28,7 +28,7 @@
   const fires=[];
   const calls=[];
   const missionHistory=[];
-  let mission=null,lastSpawn=0,elapsed=0,toastTimer=0,missionSerial=0;
+  let mission=null,lastSpawn=-10,elapsed=0,toastTimer=0,missionSerial=0;
 
   function rand(a,b){return a+Math.random()*(b-a)}
   function pick(a){return a[Math.floor(Math.random()*a.length)]}
@@ -157,7 +157,7 @@
       c.state=panic>65?"PANIC":panic>42?"WORRIED":"CALM";
       if(c.state==="PANIC"){c.x+=rand(-18,18)*dt;c.y+=rand(-18,18)*dt}
     });
-    if(elapsed-lastSpawn>8){lastSpawn=elapsed;if(Math.random()<.55)createCall();if(Math.random()<.4)createFire()}
+    if(elapsed-lastSpawn>18){lastSpawn=elapsed;if(Math.random()<.48)createCall();if(elapsed>35&&Math.random()<.28)createFire()}
   }
 
   function completeMission(){
@@ -232,7 +232,7 @@
     const dt=Math.min(.05,(t-(loop.last||t))/1000);loop.last=t;elapsed+=dt;
     if(typeof state!=="undefined"&&!state.ended){
       updateCivilians(dt);updateFires(dt);updateCrew(dt);
-      if(!mission && elapsed>5)chooseMission();
+      if(!mission && elapsed>32)chooseMission();
       calls.forEach(c=>{c.age+=dt;if(c.age>12)c.critical=true});
       const tags=document.getElementById("daiTags");
       if(tags)tags.innerHTML='<span>'+calls.length+' HELP</span><span>'+fires.length+' FIRES</span><span>'+crews.length+' CREWS</span><span>'+buildings.filter(b=>b.blocked).length+' BLOCKED</span><span>'+missionHistory.filter(x=>x.status==="SUCCESS").length+' DONE</span>';
