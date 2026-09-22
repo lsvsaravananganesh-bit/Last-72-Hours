@@ -175,7 +175,7 @@
     if(typeof state==="undefined")return;
     S.tick+=dt;S.eventClock-=dt;S.autosaveClock+=dt;
     if(S.eventClock<=0&&!state.ended){
-      S.eventClock=8+Math.random()*7;
+      S.eventClock=13+Math.random()*8;
       const pressure=(100-state.confidence)+(state.panic*.35)+(state.congestion*.25)+(S.flood*.3);
       if(Math.random()*100<Math.min(92,28+pressure*.55))spawnEvent();
     }
