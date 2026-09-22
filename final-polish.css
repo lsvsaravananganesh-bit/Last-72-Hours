@@ -99,3 +99,22 @@ body.final-opening .systems-right{opacity:.72}
 #closeGameHelp{width:100%;padding:12px;border:1px solid rgba(159,255,229,.25);border-radius:8px;background:rgba(159,255,229,.07);color:#dffef7;font:700 9px Arial;letter-spacing:1px;cursor:pointer}#closeGameHelp:hover{background:rgba(159,255,229,.13)}
 #gameHelpButton{width:28px;height:28px;border:1px solid rgba(159,255,229,.25);border-radius:50%;background:rgba(159,255,229,.06);color:#9fffe5;font:bold 13px Arial;cursor:pointer;margin:6px}
 #gameHelpButton:hover{background:rgba(159,255,229,.14)}
+
+
+/* FINAL REARRANGEMENT — GAME FIRST */
+.topbar,.mission-mode-strip,.hero{display:none!important}
+.app{padding:0!important;margin:0!important;max-width:none!important}
+.dashboard{display:block!important;margin:0!important;padding:0!important}
+.dashboard>.briefing,.dashboard>.actions{display:none!important}
+.map-panel{display:block!important;width:100vw!important;height:100vh!important;margin:0!important;padding:0!important;border:0!important;background:#061016!important;box-shadow:none!important}
+.map-panel>.panel-title,.map-panel>.field-mode-bar,.map-panel>.legend{display:none!important}
+.field-world{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;min-height:100vh!important;border:0!important;border-radius:0!important;overflow:hidden!important}
+#actualGameCanvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important}
+.clean-game-hud{display:block!important}
+.dynamic-world-overlay,.dynamic-world-hud,.systems-hud,.final-mission-rail,.final-demo-tip{display:none!important}
+.landfall-stage{z-index:110!important}
+.after-panel{z-index:111!important}
+.game-menu,.game-map-panel,#gameHelp{font-family:Arial,sans-serif}
+.clean-stats{align-items:center}
+.clean-stats #gameHelpButton{flex:0 0 28px}
+.clean-controls{pointer-events:none}
