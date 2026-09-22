@@ -17,15 +17,36 @@ function highRiskPopulation(){return Object.values(zoneData).filter(z=>z.risk===
 function phase(){return state.hours>48?"PREPARATION PHASE":state.hours>24?"ESCALATION PHASE":state.hours>0?"CRISIS PHASE":"LANDFALL"}
 
 function updateCycloneIntelligence(){
- const progress=Math.min(1,(720-state.distance)/720),volatility=(100-state.confidence)/8;
- state.wind=Math.min(190,Math.round(55+progress*105+volatility));state.rainfall=Math.round(110+progress*230+volatility*6+(state.landfallZone==="riverside"?35:0));state.stormRadius=Math.round(180+progress*150+(state.wind>130?35:0));state.forecastPressure=Math.round(1008-progress*38-volatility);
- const base={coastal:48,harbour:24,riverside:16,villages:12}[state.landfallZone]||48;
- state.landfallProb=Math.max(35,Math.min(92,Math.round(base+(state.confidence-50)*.35+progress*8)));
- let a=Math.max(5,Math.round(state.landfallProb+(state.confidence<50?8:4)*(Math.random()-.5)));
- let b=Math.max(5,Math.round((100-a)*.55+(Math.random()-.5)*4)),c=Math.max(5,100-a-b);
- if(c<5){c=5;b=Math.max(5,95-a)} const total=a+b+c;state.modelA=Math.round(a*100/total);state.modelB=Math.round(b*100/total);state.modelC=100-state.modelA-state.modelB;
+ const progress=Math.min(1,(72-state.hours)/72);
+ const volatility=(100-state.confidence)/8;
+ const phaseIndex=Math.min(4,Math.floor(progress*4)+(state.chainReactions>2?1:0));
  const scenarios=[["Baseline Cyclone",1],["Rapid Intensification",2],["Track Deviation",2],["Rainfall-Heavy System",2],["Infrastructure Stress Test",3]];
- const selected=scenarios[Math.min(4,Math.floor(progress*4)+(state.chainReactions>2?1:0))];state.scenario=selected[0];state.scenarioLevel=selected[1];
+ const selected=scenarios[phaseIndex];
+ state.scenario=selected[0];
+ state.scenarioLevel=selected[1];
+
+ const corridorCycle=["coastal","harbour","riverside","villages"];
+ const corridorIndex=Math.min(corridorCycle.length-1,Math.floor(progress*4));
+ state.landfallZone=corridorCycle[corridorIndex];
+ state.forecastShift=state.landfallZone;
+ state.trackShift=Math.round((corridorIndex-1.5)*18 + (state.scenarioLevel-1)*8);
+
+ const intensityBonus=state.scenarioLevel===3?14:state.scenarioLevel===2?7:0;
+ state.wind=Math.min(190,Math.round(55+progress*105+volatility+intensityBonus));
+ state.rainfall=Math.round(110+progress*230+volatility*6+intensityBonus*4+(state.landfallZone==="riverside"?35:0));
+ state.stormRadius=Math.round(180+progress*150+(state.wind>130?35:0));
+ state.forecastPressure=Math.round(1008-progress*38-volatility-intensityBonus*.5);
+
+ const base={coastal:48,harbour:24,riverside:16,villages:12}[state.landfallZone]||48;
+ state.landfallProb=Math.max(35,Math.min(92,Math.round(base+(state.confidence-50)*.35+progress*8+intensityBonus*.35)));
+
+ let a=Math.max(5,Math.round(state.landfallProb));
+ let b=Math.max(5,Math.round((100-a)*.55));
+ let c=Math.max(5,100-a-b);
+ const total=a+b+c;
+ state.modelA=Math.round(a*100/total);
+ state.modelB=Math.round(b*100/total);
+ state.modelC=100-state.modelA-state.modelB;
 }
 function renderForecast(){$("landfallProb").textContent=state.landfallProb+"%";$("rainfall").textContent=state.rainfall+" mm";$("stormRadius").textContent=state.stormRadius+" km";$("trackShift").textContent=(state.trackShift>=0?"+":"")+state.trackShift+" km";$("models").textContent="MODEL A • "+state.modelA+"%  MODEL B • "+state.modelB+"%  MODEL C • "+state.modelC+"% • "+state.scenario+" • Pressure "+state.forecastPressure+" hPa"}
 function updateRisk(){Object.entries(zoneData).forEach(([key,z])=>{const base={coastal:95,harbour:90,oldtown:72,riverside:78,industrial:68,north:38,market:48,villages:75}[key],distanceFactor=Math.max(0,(720-state.distance)/7),corridorBoost=state.forecastShift===key?18:0,rainBoost=(key==="riverside"||key==="villages")?Math.max(0,(state.rainfall-150)/10):0,windBoost=state.wind>135?7:0;z.riskScore=Math.min(100,Math.round(base+distanceFactor+corridorBoost+rainBoost+windBoost));z.risk=z.riskScore>=88?"CRITICAL":z.riskScore>=62?"HIGH":z.riskScore>=42?"MODERATE":"LOW"})}
