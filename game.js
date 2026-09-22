@@ -255,7 +255,7 @@ window.Last72SelectZone=selectZone;
   const ctx=canvas.getContext("2d");
   const gameMenu=document.createElement("div");
   gameMenu.id="gameMenu";gameMenu.className="game-menu";
-  gameMenu.innerHTML='<div class="gm-card"><div class="gm-kicker">SATELLITE COMMAND // SURYA NAGAR</div><h2>LAST 72 HOURS</h2><p>FIELD COMMAND PAUSED</p><div class="gm-actions"><button data-gm="resume">RESUME GAME</button><button data-gm="map">TACTICAL MAP</button><button data-gm="controls">CONTROLS</button><button data-gm="restart">RESTART MISSION</button></div><div id="gmControls" class="gm-controls" hidden><b>CONTROLS</b><span>W A S D / ARROWS — MOVE</span><span>E — INTERACT / RESCUE</span><span>V — VEHICLE</span><span>M — MAP</span><span>1–5 — COMMANDS</span><span>ESC — MENU</span></div></div>';
+  gameMenu.innerHTML='<div class="gm-card"><div class="gm-kicker">SATELLITE COMMAND // SURYA NAGAR</div><h2>LAST 72 HOURS</h2><p>FIELD COMMAND PAUSED</p><div class="gm-actions"><button data-gm="resume">RESUME GAME</button><button data-gm="map">TACTICAL MAP</button><button data-gm="help">HOW TO PLAY</button><button data-gm="controls">CONTROLS</button><button data-gm="restart">RESTART MISSION</button></div><div id="gmControls" class="gm-controls" hidden><b>CONTROLS</b><span>W A S D / ARROWS — MOVE</span><span>E — INTERACT / RESCUE</span><span>V — VEHICLE</span><span>M — MAP</span><span>1–5 — COMMANDS</span><span>ESC — MENU</span></div></div>';
   map.appendChild(gameMenu);
   const gameMapPanel=document.createElement("div");gameMapPanel.id="gameMapPanel";gameMapPanel.className="game-map-panel";
   gameMapPanel.innerHTML='<div class="gmp-head"><div><b>TACTICAL CITY MAP</b><span>LIVE OPERATIONAL VIEW • SURYA NAGAR</span></div><div class="gmp-head-actions"><span id="gmpTime">72:00</span><button id="closeGameMap">BACK TO FIELD</button></div></div><div class="gmp-body"><canvas id="gameMapCanvas"></canvas><aside class="gmp-info"><div class="gmp-info-title">OPERATIONAL INTELLIGENCE</div><div class="gmp-stat"><span>ACTIVE ZONE</span><b id="gmpZone">COASTAL WARD</b></div><div class="gmp-stat"><span>RISK</span><b id="gmpRisk">CRITICAL</b></div><div class="gmp-stat"><span>MISSION</span><b id="gmpMission">FIRST WARNING</b></div><div class="gmp-stat"><span>CYCLONE</span><b id="gmpStorm">720 KM</b></div><div class="gmp-stat"><span>ROUTES</span><b id="gmpRoutes">OPEN</b></div><div class="gmp-divider"></div><div class="gmp-mini-title">FACILITIES</div><div class="gmp-facilities"><span>● SHELTERS</span><span>● HOSPITALS</span><span>● EMERGENCY UNITS</span></div><div class="gmp-help">Click a zone to lock your next field operation. M or ESC returns to the field.</div></aside></div><div class="gmp-legend"><b>LEGEND</b><span>◆ COMMANDER</span><span>◆ MISSION</span><span>■ VEHICLE</span><span>● HELP / FIRE</span><span>□ ZONE</span></div>';
@@ -618,11 +618,14 @@ window.Last72SelectZone=selectZone;
   function openMap(){mapOpen=true;menuOpen=false;paused=true;gameMenu.classList.remove("show");gameMapPanel.classList.add("show");drawTacticalMap()}
   function closeMap(){mapOpen=false;paused=false;gameMapPanel.classList.remove("show");say("RETURNED TO FIELD")}
   function drawUI(){
-    const m=mission();ctx.fillStyle="rgba(2,8,12,.72)";ctx.fillRect(18,18,370,100);ctx.fillStyle="#9fffe5";ctx.font="bold 11px Arial";ctx.fillText("LAST 72 HOURS  //  FIELD COMMAND",32,39);ctx.fillStyle="#fff";ctx.font="bold 21px Arial";ctx.fillText(m?m.title:"LANDFALL PREPARATION",32,66);ctx.fillStyle="#91aab2";ctx.font="11px Arial";ctx.fillText(m?m.text:"All primary field objectives completed.",32,88);ctx.fillText("WASD MOVE   E INTERACT   V VEHICLE   1-5 COMMANDS   ESC PAUSE",32,106);
-    ctx.fillStyle="rgba(2,8,12,.72)";ctx.fillRect(canvas.width-310,18,292,86);ctx.fillStyle="#9aaeb4";ctx.font="10px Arial";ctx.fillText("TIME TO LANDFALL",canvas.width-292,37);ctx.fillStyle="#fff";ctx.font="bold 24px Arial";ctx.fillText(String(Math.max(0,state.hours)).padStart(2,"0")+":00",canvas.width-292,65);ctx.font="11px Arial";ctx.fillText("SAFETY "+Math.round(state.safety)+"%     BUDGET ₹"+state.budget,canvas.width-292,87);
-    if(toastUntil>performance.now()){ctx.fillStyle="rgba(0,20,18,.9)";ctx.fillRect(canvas.width/2-180,canvas.height-86,360,42);ctx.fillStyle="#dff";ctx.font="bold 11px Arial";ctx.textAlign="center";ctx.fillText(toastText,canvas.width/2,canvas.height-61);ctx.textAlign="left"}
-    if(paused){ctx.fillStyle="rgba(0,0,0,.7)";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#fff";ctx.font="bold 34px Arial";ctx.textAlign="center";ctx.fillText("PAUSED",canvas.width/2,canvas.height/2-45);ctx.font="12px Arial";ctx.fillStyle="#9fffe5";ctx.fillText("ESC RESUME  •  M MAP / OPERATIONS",canvas.width/2,canvas.height/2);ctx.textAlign="left"}
-    if(mapOpen){ctx.fillStyle="rgba(2,7,11,.94)";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#fff";ctx.font="bold 26px Arial";ctx.fillText("TACTICAL CITY MAP",35,50);zones.forEach((z,i)=>{const sx=35+(z.x/W)*(canvas.width-70),sy=80+(z.y/H)*(canvas.height-120);ctx.fillStyle=z.key===state.selectedZone?"#9fffe5":"#37505a";ctx.fillRect(sx,sy,Math.max(80,z.w/W*canvas.width),Math.max(40,z.h/H*canvas.height));ctx.fillStyle="#fff";ctx.font="9px Arial";ctx.fillText(z.name,sx+5,sy+15)});ctx.fillStyle="#8da5ad";ctx.font="11px Arial";ctx.fillText("M / ESC  CLOSE MAP",35,canvas.height-25)}
+    // The HTML HUD owns the persistent interface. Canvas only renders transient feedback and pause/map states.
+    if(toastUntil>performance.now()){
+      ctx.fillStyle="rgba(0,20,18,.92)";ctx.fillRect(canvas.width/2-180,canvas.height-72,360,38);
+      ctx.fillStyle="#dff";ctx.font="bold 11px Arial";ctx.textAlign="center";ctx.fillText(toastText,canvas.width/2,canvas.height-48);ctx.textAlign="left";
+    }
+    if(paused&&!helpOpen&&!menuOpen&&!mapOpen){
+      ctx.fillStyle="rgba(0,0,0,.42)";ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
   }
   function frame(now){
     const dt=Math.min(.033,(now-last)/1000);last=now;interactCooldown=Math.max(0,interactCooldown-dt);
@@ -656,6 +659,7 @@ window.Last72SelectZone=selectZone;
   gameMenu.querySelector('[data-gm="resume"]').addEventListener("click",()=>setMenu(false));
   gameMenu.querySelector('[data-gm="map"]').addEventListener("click",openMap);
   gameMenu.querySelector('[data-gm="controls"]').addEventListener("click",()=>{const n=document.getElementById("gmControls");n.hidden=!n.hidden});
+  gameMenu.querySelector('[data-gm="help"]').addEventListener("click",()=>setHelp(true));
   gameMenu.querySelector('[data-gm="restart"]').addEventListener("click",()=>{setMenu(false);document.getElementById("restart")?.click()});
   mapCanvas.addEventListener("click",e=>{const r=mapCanvas.getBoundingClientRect(),w=mapCanvas.width,h=mapCanvas.height,s=Math.min((w-50)/W,(h-50)/H),ox=(w-W*s)/2,oy=(h-H*s)/2,z=zoneAt((e.clientX-r.left-ox)/s,(e.clientY-r.top-oy)/s);if(z){window.Last72SelectZone(z.key);drawTacticalMap();say("TARGET LOCKED • "+z.name)}});
   setInterval(()=>{if(mapOpen)drawTacticalMap()},500);
