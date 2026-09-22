@@ -1,0 +1,3 @@
+Phase 6: AI Emergency Commander
+
+The game now includes a natural-language command layer. Players can type operational commands instead of only clicking buttons. Commands are interpreted locally and mapped to the existing game actions. The parser supports evacuation, shelter preparation, public warnings, hospital reinforcement, road clearing, zone targeting, status requests, and help. Every accepted command consumes a turn through the normal game loop and produces an explanation in the emergency feed. This version intentionally uses deterministic local command interpretation rather than requiring an external AI API, so the game remains playable without API keys or network dependencies.
