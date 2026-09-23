@@ -224,7 +224,6 @@
     }
     const c=calls[0];if(c){c.civilian.state="RESCUED";calls.shift();state.peopleProtected=(state.peopleProtected||0)+1;state.evacuated=(state.evacuated||0)+1;state.safety=Math.min(100,state.safety+2);notify("CIVILIAN RESCUED • +1 SAFETY")}
   }
-
   function loop(t){
     const dt=Math.min(.05,(t-(loop.last||t))/1000);loop.last=t;elapsed+=dt;
     if(typeof state!=="undefined"&&!state.ended){
@@ -235,7 +234,6 @@
       if(tags)tags.innerHTML='<span>'+calls.length+' HELP</span><span>'+fires.length+' FIRES</span><span>'+crews.length+' CREWS</span><span>'+buildings.filter(b=>b.blocked).length+' BLOCKED</span><span>'+missionHistory.filter(x=>x.status==="SUCCESS").length+' DONE</span>';
       if(t-lastDraw>33){lastDraw=t;draw();}
     }
-    requestAnimationFrame(loop);
   }
   window.Last72DynamicWorld={getMission:()=>mission,getHistory:()=>missionHistory.slice(),getStats:()=>({help:calls.length,fires:fires.length,crews:crews.length,blocked:buildings.filter(b=>b.blocked).length})};
   requestAnimationFrame(loop);
