@@ -103,15 +103,11 @@
   });
 
   // UI coordination is intentionally throttled; the gameplay canvas owns the frame loop.
-  setInterval(()=>{
+  window.Last72Runtime?.every("polish-ui",120,()=>{
     render();
     const dw=window.Last72DynamicWorld;
-    if(dw){
-      const s=dw.getStats();
-      const hud=document.querySelector(".dynamic-ai-hud");
-      if(hud)hud.classList.toggle("urgent",(s.help||0)>0||(s.fires||0)>0);
-    }
-  },120);
+    if(dw){const s=dw.getStats();const hud=document.querySelector(".dynamic-ai-hud");if(hud)hud.classList.toggle("urgent",(s.help||0)>0||(s.fires||0)>0);}
+  });
 
   setTimeout(()=>tip.classList.add("soft-hide"),95000);
 })();
