@@ -236,5 +236,5 @@
     }
   }
   window.Last72DynamicWorld={getMission:()=>mission,getHistory:()=>missionHistory.slice(),getStats:()=>({help:calls.length,fires:fires.length,crews:crews.length,blocked:buildings.filter(b=>b.blocked).length})};
-  requestAnimationFrame(loop);
+  window.Last72Runtime?.frame("dynamic-world",(dt)=>loop(performance.now()));
 })();
