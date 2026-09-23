@@ -240,7 +240,5 @@
   addEventListener("keyup",e=>{keys[e.key.toLowerCase()]=false});
 
   restore();wrapCore();render();toast("GAMEPLAY SYSTEMS ONLINE • Dynamic incidents enabled",true);
-  let last=performance.now();
-  function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;tick(dt);requestAnimationFrame(loop)}
-  requestAnimationFrame(loop);
+  window.Last72Runtime?.frame("gameplay-systems",(dt)=>tick(dt));
 })();
