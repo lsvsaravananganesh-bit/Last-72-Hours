@@ -119,3 +119,6 @@ It does **not** reproduce another game's characters, map, story, assets or brand
 - **2:20–3:00** — Show the first consequence-driven response, then open the tactical map or switch vehicle to demonstrate depth.
 
 The opening is intentionally paced so a judge sees the core loop before the simulation reaches its full difficulty.
+
+## Refactored runtime
+The current build uses `runtime.js` as a shared lifecycle layer. The main game loop stays in `game.js`; supporting simulation and UI layers are routed through the shared runtime scheduler to reduce duplicate polling and make future features easier to maintain.
